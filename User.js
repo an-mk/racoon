@@ -1,7 +1,7 @@
 const db = require('./db.js')
 
 const User = db.model('User', {
-    name: { type: String, required: true, unique: true, minlength: 1, maxlength: 256},
+    name: { type: String, required: true, minlength: 1, maxlength: 256},
     pswdHash: { type: String, required: true }
 })
 

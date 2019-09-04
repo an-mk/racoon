@@ -14,12 +14,15 @@ app.use(session({
 	cookie: { sameSite: true }
 }))
 
-app.use('/public', express.static(`${__dirname}public`))
+app.use('/', express.static(`${__dirname}/public`))
+app.get('/', (_req, res) => res.sendFile(`${__dirname}/public/index.html`))
 app.use(express.json())
 app.use(helmet())
 app.disable('x-powered-by')
 
 app.use('/api', require('./api'))
 // adds POST /api/users/create etc.
+
+app.get('*', (_req, res) => res.sendFile(`${__dirname}/public/index.html`))
 
 app.listen(port, () => console.log(`Running on port ${port}`))

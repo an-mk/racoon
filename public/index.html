@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Social network</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+</head>
+
+<body ng-app="app" ng-controller="applicationController" class="mdc-typography">
+
+    <header class="mdc-top-app-bar mdc-top-app-bar--fixed" style="bottom:0;" data-mdc-auto-init="MDCTopAppBar">
+        <div class="mdc-top-app-bar__row">
+            <section ng-if="currentUser" class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
+                <span class="mdc-top-app-bar__title">{{currentUser}}</span>
+            </section>
+            <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end" role="toolbar">
+                    <a href="/" class="mdc-top-app-bar__title mdc-top-app-bar__action-item">Zadania</a>
+                <a href="/login" class="mdc-top-app-bar__title mdc-top-app-bar__action-item">Konto</a>
+            </section>
+        </div>
+    </header>
+    <div ng-view></div>
+    <div class="mdc-snackbar">
+        <div class="mdc-snackbar__surface">
+            <div class="mdc-snackbar__label" role="status" aria-live="polite"></div>
+            <div class="mdc-snackbar__actions">
+                <button type="button" class="mdc-button mdc-snackbar__action"></button>
+                <button class="mdc-icon-button mdc-snackbar__dismiss material-icons"
+                    title="Dismiss">close</button></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.7.8/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.7.8/angular-route.min.js"></script>
+    <script src="/app.js"></script>
+    <script type="text/javascript">
+        window.mdc.autoInit();
+    </script>
+</body>
+
+</html>

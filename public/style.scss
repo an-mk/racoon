@@ -1,0 +1,102 @@
+$mdc-theme-primary: rgb(255, 87, 34);
+$mdc-theme-secondary: rgb(244, 67, 54);
+$mdc-theme-background: rgb(239,235,233);
+
+@import "material-components-web/material-components-web";
+@import url('https://fonts.googleapis.com/css?family=Roboto+Slab&display=swap');
+
+html,
+body {
+  margin: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: $mdc-theme-background;
+}
+
+:focus {
+  outline-width: 0;
+}
+
+img,
+video,
+iframe {
+  border-radius: 4px;
+  width: 100%;
+  height: auto;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
+}
+
+.card > * {
+  margin-bottom: 16px;
+}
+
+.card > :last-child {
+  margin-bottom: 0;
+}
+
+.card > .mdc-button,
+.card > .end {
+  align-self: flex-end;
+}
+
+.mdc-button--outlined {
+  border-width: 2px;
+}
+
+@media (min-width: 840px) {
+  .center {
+    padding-left: 20%;
+    padding-right: 20%;
+  }
+}
+
+@media (min-width: 480px) and (max-width: 839px) {
+  .center {
+    padding-left: 10%;
+    padding-right: 10%;
+  }
+}
+
+@media (max-width: 479px) {
+  .center {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+.center {
+  padding-bottom: calc(64px + 16px);
+}
+
+@media (max-width: 599px) {
+  .center {
+    padding-bottom: calc(56px + 16px);
+  }
+}
+
+.mdc-button__label {
+  white-space: nowrap;
+  overflow: hidden !important;
+  text-overflow: ellipsis;
+}
+
+.mdc-button {
+  max-width: 100%;
+}
+
+.mdc-top-app-bar {
+  border-radius: 16px 16px 0 0;
+}
+
+.mdc-top-app-bar__title {
+    font-family: 'Roboto Slab', serif;
+}
