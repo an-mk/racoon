@@ -28,16 +28,11 @@ router.post('/users/create', [
 
     //User does already exist
     if (oldUser)
-        return res.status(401).json({ msg: 'Bad username or password' })
+        return res.status(409).json({ msg: 'Bad username or password' })
 
     const user = new User({ name: req.body.name, pswdHash: bcrypt.hashSync(req.body.pswd, 10) });
     user.save((err) => {
-		if(err && err.code === 11000){
-			console.log(`Failed to create user - username taken: ${req.body.name}, IP: ${req.ip} `);
-            res.status(409).json({ msg: 'username is taken' })
-            return
-		}
-        else if (err) {
+        if (err) {
             console.error(err)
             res.sendStatus(500)
             return
