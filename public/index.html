@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Social network</title>
+    <title>Racoon</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons">
     <link rel="stylesheet" href="style.css">
@@ -16,7 +16,10 @@
     <header class="mdc-top-app-bar mdc-top-app-bar--fixed" style="bottom:0;" data-mdc-auto-init="MDCTopAppBar">
         <div class="mdc-top-app-bar__row">
             <section ng-if="currentUser" class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
-                <span class="mdc-top-app-bar__title">{{currentUser}}</span>
+                <span class="mdc-top-app-bar__title">Witaj {{currentUser}}</span>
+            </section>
+            <section ng-if="!currentUser" class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
+                <span class="mdc-top-app-bar__title">Racoon</span>
             </section>
             <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end" role="toolbar">
                     <a href="/" class="mdc-top-app-bar__title mdc-top-app-bar__action-item">Zadania</a>
