@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "compile": "node-sass  ./public/style.scss -o ./public/ --include-path ./node_modules/"
+    "compile": "node-sass  ./public/style.scss -o ./public/ --include-path ./node_modules/",
+    "prepare": "node-sass  ./public/style.scss -o ./public/ --include-path ./node_modules/"
   },
   "author": "",
   "license": "",

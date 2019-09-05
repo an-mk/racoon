@@ -1,5 +1,8 @@
 <div class="mdc-layout-grid center">
     <div class="mdc-layout-grid__inner">
+        <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12">
+            <span class="mdc-typography--headline4">Konto</span>
+        </div>
         <form class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12 card" ng-submit="login(username, password)">
             <div class="mdc-typography--headline5" style="text-align: center;">Logowanie</div>
 
@@ -25,9 +28,9 @@
                     <div class="mdc-notched-outline__trailing"></div>
                 </div>
             </div>
-            
+
             <div class="mdc-typography--body1">Pamiętaj o bezpieczeństwie swojego hasła.</div>
-            <span class="end"> 
+            <span class="end">
                 <button type="button" ng-click="register(username, password)" class="mdc-button"
                     data-mdc-auto-init="MDCRipple">
                     <span class="mdc-button__label">Utwórz konto</span>
@@ -39,17 +42,17 @@
         </form>
 
         <div ng-if="currentUser" class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12 card">
-                <div class="mdc-typography--headline5" style="text-align: center;">Moje konto</div>
-    
-                <div class="mdc-typography--headline6">
-                    Zalogowano jako: {{currentUser}}
-                </div>
+            <div class="mdc-typography--headline5" style="text-align: center;">Moje konto</div>
 
-                <span class="end">
-                    <button ng-click="logout()" class="mdc-button mdc-button--raised" data-mdc-auto-init="MDCRipple">
-                        <span class="mdc-button__label">Wyloguj </span>
-                    </button>
-                </span>
+            <div class="mdc-typography--headline6">
+                Zalogowano jako: {{currentUser}}
             </div>
+
+            <span class="end">
+                <button ng-click="logout()" class="mdc-button mdc-button--raised" data-mdc-auto-init="MDCRipple">
+                    <span class="mdc-button__label">Wyloguj </span>
+                </button>
+            </span>
+        </div>
     </div>
 </div>

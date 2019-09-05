@@ -1,0 +1,36 @@
+<div class="mdc-layout-grid center">
+    <div class="mdc-layout-grid__inner">
+        <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12">
+            <span class="mdc-typography--headline4">Ranking</span>
+        </div>
+        <div class="mdc-data-table mdc-layout-grid__cell mdc-layout-grid__cell--span-12"
+            data-mdc-auto-init="MDCDataTable">
+            <table class="mdc-data-table__table" aria-label="Dessert calories">
+                <thead>
+                    <tr class="mdc-data-table__header-row">
+                        <th class="mdc-data-table__header-cell" role="columnheader" scope="col">Nazwa</th>
+                        <th class="mdc-data-table__header-cell" role="columnheader" scope="col">Punkty</th>
+                        <th class="mdc-data-table__header-cell" role="columnheader" scope="col">Kara</th>
+                        <th class="mdc-data-table__header-cell" role="columnheader" scope="col"
+                            ng-repeat="problem in problems track by $index">{{problem}}</th>
+                    </tr>
+                </thead>
+                <tbody class="mdc-data-table__content">
+                    <tr class="mdc-data-table__row"
+                        ng-class="currentUser == user.name ? 'mdc-data-table__row--selected' : ''"
+                        ng-repeat="user in users track by $index">
+                        <td class="mdc-data-table__cell">{{user.name}}</td>
+                        <td class="mdc-data-table__cell">{{user.points}}</td>
+                        <td class="mdc-data-table__cell">{{user.penalty}}</td>
+                        <td class="mdc-data-table__cell" ng-repeat="problem in user.problems track by $index">
+                            <span ng-if="problem.time">+</span>
+                            <span ng-if="!problem.time">-</span>
+                            <span ng-if="problem.attempts">{{problem.attempts}}</span><br>
+                            <span class="mdc-typography--caption" ng-if="problem.time">{{problem.time}}</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

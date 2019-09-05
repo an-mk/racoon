@@ -1,10 +1,28 @@
 $mdc-theme-primary: rgb(255, 87, 34);
 $mdc-theme-secondary: rgb(244, 67, 54);
-$mdc-theme-background: rgb(239,235,233);
+$mdc-theme-background: rgb(250, 250, 250);
+
+$mdc-shape-small-component-radius: 32px;
+$mdc-shape-medium-component-radius: 16px;
+$mdc-shape-large-component-radius: 16px;
 
 @import "material-components-web/material-components-web";
-@import url('https://fonts.googleapis.com/css?family=Roboto+Slab&display=swap');
+@import url("https://fonts.googleapis.com/css?family=Roboto+Slab&display=swap");
 
+@keyframes show {
+  0% {
+    visibility: hidden;
+    opacity: 0;
+  }
+  100% {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
+* {
+  animation: mdc-animation-enter(show, 350ms);
+}
 html,
 body {
   margin: 0;
@@ -14,16 +32,14 @@ body {
   background-color: $mdc-theme-background;
 }
 
-:focus {
-  outline-width: 0;
+tr,
+th,
+td {
+  padding: 16px 8px 16px 8px !important;
 }
 
-img,
-video,
-iframe {
-  border-radius: 4px;
-  width: 100%;
-  height: auto;
+:focus {
+  outline-width: 0;
 }
 
 .card {
@@ -31,8 +47,11 @@ iframe {
   flex-direction: column;
   background-color: #fff;
   padding: 16px;
-  border-radius: 8px;
-  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
+  border-radius: $mdc-shape-large-component-radius;
+  /*box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 1px 3px 0 rgba(0, 0, 0, 0.12);*/
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.12);
 }
 
 .card > * {
@@ -93,10 +112,6 @@ iframe {
   max-width: 100%;
 }
 
-.mdc-top-app-bar {
-  border-radius: 16px 16px 0 0;
-}
-
 .mdc-top-app-bar__title {
-    font-family: 'Roboto Slab', serif;
+  font-family: "Roboto Slab", serif;
 }
