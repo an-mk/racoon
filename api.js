@@ -66,7 +66,8 @@ router.post('/login', [
 
     console.log('Logged in, user: ' + req.body.name + ', IP: ' + req.ip)
     req.session.name = req.body.name
-    req.session.elevated = user.elevated
+    if(user.elevated)
+        req.session.elevated = true
 
     res.status(200).json({ msg: 'Logged in' })
 })
@@ -85,6 +86,8 @@ router.post('/problems/add', [
     if (!errors.isEmpty()) {
         return res.status(422).json({ errors: errors.array() });
     }
+    if (!req.session.elevated)
+        return res.status(401).json({ msg: 'Not logged in as admin' })
     
     const problem = new Problem({ name: req.body.name })
     await problem.save((err) => {
@@ -112,7 +115,7 @@ router.post('/submit',[
     }
 
     if (req.session.name === undefined)
-        return res.status(401).json({ msg: 'User not loged in' } )
+        return res.status(401).json({ msg: 'User not logged in' } )
     
     const problem = await Problem.findOne({ name: req.body.problem }).catch(err => {
         res.sendStatus(500)
