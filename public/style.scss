@@ -1,5 +1,5 @@
 $mdc-theme-primary: rgb(255, 87, 34);
-$mdc-theme-secondary: rgb(244, 67, 54);
+$mdc-theme-secondary: rgb(255, 61, 0);
 $mdc-theme-background: rgb(250, 250, 250);
 
 $mdc-shape-small-component-radius: 32px;
@@ -23,6 +23,7 @@ $mdc-shape-large-component-radius: 16px;
 * {
   animation: mdc-animation-enter(show, 350ms);
 }
+
 html,
 body {
   margin: 0;
@@ -30,6 +31,10 @@ body {
   width: 100%;
   height: 100%;
   background-color: $mdc-theme-background;
+}
+
+code {
+  white-space: pre-wrap;
 }
 
 tr,
@@ -114,4 +119,18 @@ td {
 
 .mdc-top-app-bar__title {
   font-family: "Roboto Slab", serif;
+}
+
+.fab {
+  z-index: 999;
+  position: fixed;
+  bottom: calc(2rem + 56px);
+  right: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .fab {
+    bottom: calc(2rem + 64px);
+    right: 2rem;
+  }
 }

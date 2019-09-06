@@ -1,4 +1,4 @@
-const app = angular.module('app', ['ngRoute'])
+const app = angular.module('app', ['ngRoute', 'ngSanitize'])
     .config(function ($routeProvider, $locationProvider) {
         $locationProvider.html5Mode({
             enabled: true,
@@ -29,8 +29,46 @@ app.controller('applicationController', function ($scope, $location, notificatio
     userService.myName().then(name => $scope.$emit('login', name)).catch(() => $location.path('/login'))
 })
 
-app.controller('contestController', function () {
+app.controller('contestController', function ($scope, $timeout) {
     window.mdc.autoInit()
+
+    $scope.toggleDrawer = () => {
+        const drawer = document.querySelector('.mdc-drawer')
+        if (drawer.style.display == 'flex')
+            drawer.style.display = 'none'
+        else
+            drawer.style.display = 'flex'
+    }
+    $scope.problems = [{
+        name: 'Suma',
+        content: '<p>Zsumuj a i b. </p> <b>Przykładowe wejście:</b> <code>a = 2 \nb = 10 </code> <b>Przykładowe wyjście:</b> <code>12</code>'
+    },
+    {
+        name: 'B',
+        content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nibh augue, suscipit a, scelerisque sed, lacinia in, mi. Cras vel lorem. Etiam pellentesque aliquet tellus. Phasellus pharetra nulla ac diam. Quisque semper justo at risus. Donec venenatis, turpis vel hendrerit interdum, dui ligula ultricies purus, sed posuere libero dui id orci. Nam congue, pede vitae dapibus aliquet, elit magna vulputate arcu, vel tempus metus leo non est. Etiam sit amet lectus quis est congue mollis. Phasellus congue lacus eget neque. Phasellus ornare, ante vitae consectetuer consequat, purus sapien ultricies dolor, et mollis pede metus eget nisi. Praesent sodales velit quis augue. Cras suscipit, urna at aliquam rhoncus, urna quam viverra nisi, in interdum massa nibh nec erat.'
+    }]
+    $scope.currentProblem = $scope.problems[0]
+    $scope.setCurrentProblem = pr => $scope.currentProblem = pr
+    $scope.code = ''
+    $timeout(() => {
+        window.mdc.autoInit()
+        const fileInput = document.querySelector('input[type="file"]')
+        fileInput.onchange = () => {
+            if (fileInput.files.length) {
+                const reader = new FileReader()
+                reader.onload = () => {
+                    $scope.code = reader.result
+                    $scope.$apply()
+                    const textarea = document.querySelector('textarea')
+                    textarea.focus()
+                    textarea.oninput()
+                }
+                reader.readAsText(fileInput.files[0])
+            }
+        }
+    }, 0)
+    $scope.submit = console.log
+
 })
 
 app.controller('rankingController', function ($scope) {

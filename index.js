@@ -5,11 +5,10 @@ const session = require('express-session')
 const cryptoRandomString = require('crypto-random-string')
 const dockeranchor = require('./dockeranchor.js')
 const compilers = require('./compilers.js')
-
 const program = require('commander');
 program.version('0.0.1');
 
-const port = process.env.SPRPORT || process.env.PORT ||3000
+const port = process.env.SPRPORT || process.env.PORT || 3000
 
 app.use(session({
 	name: 'sprciacho',

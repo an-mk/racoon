@@ -1,8 +1,27 @@
-<div class="mdc-tab-bar" role="tablist" data-mdc-auto-init="MDCTabBar">
+<aside class="mdc-drawer mdc-drawer--modal" data-mdc-auto-init="MDCDrawer">
+    <div class="mdc-drawer__content">
+        <nav class="mdc-list">
+            <a class="mdc-list-item" ng-repeat="problem in problems track by $index"
+                ng-click="setCurrentProblem(problem); toggleDrawer()">
+                <i class="mdc-list-item__graphic" aria-hidden="true">{{problem.name[0]}}</i>
+                <span class="mdc-list-item__text">{{problem.name}}</span>
+            </a>
+        </nav>
+    </div>
+</aside>
+
+<button class="mdc-fab mdc-fab--extended fab" data-mdc-auto-init="MDCRipple" ng-click="toggleDrawer()">
+    <span class="material-icons mdc-fab__icon">menu</span>
+    <span class="mdc-fab__label">Lista zadań</span>
+</button>
+
+
+<div class="mdc-tab-bar" role="tablist" data-mdc-auto-init="MDCTabBar" ng-init="currentTab=0">
     <div class="mdc-tab-scroller">
         <div class="mdc-tab-scroller__scroll-area">
             <div class="mdc-tab-scroller__scroll-content">
-                <button class="mdc-tab mdc-tab--active" role="tab" aria-selected="true" tabindex="0">
+                <button class="mdc-tab mdc-tab--active" role="tab" aria-selected="true" tabindex="0"
+                    ng-click="currentTab=0">
                     <span class="mdc-tab__content">
                         <span class="mdc-tab__icon material-icons" aria-hidden="true">assignment</span>
                         <span class="mdc-tab__text-label">Problem</span>
@@ -13,7 +32,7 @@
                     <span class="mdc-tab__ripple"></span>
                 </button>
 
-                <button class="mdc-tab" role="tab" aria-selected="false" tabindex="1">
+                <button class="mdc-tab" role="tab" aria-selected="false" tabindex="1" ng-click="currentTab=1">
                     <span class="mdc-tab__content">
                         <span class="mdc-tab__icon material-icons" aria-hidden="true">history</span>
                         <span class="mdc-tab__text-label">Zgłoszenia</span>
@@ -24,6 +43,43 @@
                     <span class="mdc-tab__ripple"></span>
                 </button>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="mdc-layout-grid center">
+    <div class="mdc-layout-grid__inner">
+        <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12" ng-show="currentTab==0">
+            <span class="mdc-typography--headline4">{{currentProblem.name}}</span>
+        </div>
+        <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12 card" ng-show="currentTab==0"
+            ng-bind-html="currentProblem.content"></div>
+        <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12 card" ng-show="currentTab==0">
+            <div class="mdc-typography--headline6">Zgłaszanie</div>
+
+            <div class="mdc-text-field mdc-text-field--textarea mdc-text-field--fullwidth"
+                data-mdc-auto-init="MDCTextField">
+                <textarea class="mdc-text-field__input" rows="1" cols="1"
+                    oninput="this.style.height='';this.style.height = this.scrollHeight + 'px'" onchange="this.focus();"
+                    ng-model="code"></textarea>
+                <div class="mdc-notched-outline">
+                    <div class="mdc-notched-outline__leading"></div>
+                    <div class="mdc-notched-outline__notch">
+                        <label for="textarea" class="mdc-floating-label">Twój kod</label>
+                    </div>
+                    <div class="mdc-notched-outline__trailing"></div>
+                </div>
+            </div>
+            <span class="end">
+                <input id="file" style="display: none;" type="file">
+                <label for="file" class="mdc-button" data-mdc-auto-init="MDCRipple">
+                    <span class="mdc-button__label">Wybierz plik</span>
+                </label>
+
+                <button ng-click="submit(code)" class="mdc-button mdc-button--raised" data-mdc-auto-init="MDCRipple">
+                    <span class="mdc-button__label">Zgłoś</span>
+                </button>
+            </span>
         </div>
     </div>
 </div>
