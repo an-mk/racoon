@@ -33,38 +33,6 @@ app.controller('contestController', function () {
     window.mdc.autoInit()
 })
 
-app.controller('rankingController', function ($scope) {
-    window.mdc.autoInit()
-    $scope.problems = ['A', 'B', 'C']
-    $scope.users = [
-        {
-            name: 'IA',
-            points: 3,
-            penalty: 120,
-            problems: [{ attempts: 1, time: '1:10' }, { attempts: 2, time: '4:10' }, { attempts: 2 }]
-        },
-        {
-            name: 'An',
-            points: 3,
-            penalty: 120,
-            problems: [{ attempts: 1, time: '1:10' }, { attempts: 5, time: '4:10' }, { attempts: 0 }]
-        },
-        {
-            name: 'AB',
-            points: 3,
-            penalty: 120,
-            problems: [{ attempts: 1, time: '1:10' }, { attempts: 8 }, { attempts: 0 }]
-        },
-        {
-            name: 'CA',
-            points: 3,
-            penalty: 120,
-            problems: [{ attempts: 4 }, { attempts: 10 }, { attempts: 0 }]
-        },
-    ]
-})
-
-
 app.controller('loginController', function ($scope, userService, notificationService) {
     window.mdc.autoInit()
     $scope.login = (name, pswd) => {
@@ -87,6 +55,16 @@ app.controller('loginController', function ($scope, userService, notificationSer
     }
 })
 
+app.controller('rankingController', function ($scope, $timeout, userService) {
+    window.mdc.autoInit()
+
+    userService.getRanking().then(res => {
+        $scope.problems = res.problems
+        $scope.users = res.users
+        $scope.$apply()
+    })
+})
+
 app.service('userService', function ($http) {
 
     this.myName = async function () {
@@ -105,6 +83,14 @@ app.service('userService', function ($http) {
     }
     this.logout = async function () {
         const res = await $http.delete('/api/logout')
+    }
+    this.problemsList = async function () {
+        const res = await $http.get('/api/problems/list')
+        return res.data
+    }
+    this.getRanking = async function () {
+        const res = await $http.get('/api/ranking')
+        return res.data
     }
 })
 
