@@ -37,8 +37,8 @@ router.post('/users/create', [
             res.sendStatus(500)
             return
         }
-        req.session.name = req.body.name
-        req.session.elevated = req.body.elevated
+        //req.session.name = req.body.name
+        //req.session.elevated = req.body.elevated <-- Naruszenie bezpieczeñstwa, wtf, niech sam siê loguje
         res.sendStatus(201)
     });
 })
@@ -64,7 +64,7 @@ router.post('/login', [
 
     console.log('Logged in, user: ' + req.body.name + ', IP: ' + req.ip)
     req.session.name = req.body.name
-    req.session.elevated = req.body.elevated
+    req.session.elevated = user.elevated
     res.status(200).json({ msg: 'Logged in' })
 })
 

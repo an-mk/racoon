@@ -15,7 +15,7 @@ Judge system in development
 4. Temporary solution to mitigate TLS connection errors:
 Open Docker Terminal
     - type
->docker-machine ssh
+    >docker-machine ssh
     - navigate to
 	>/var/lib/boot2docker/
 	- execute
@@ -29,5 +29,5 @@ In Docker Terminal type `docker-machine ssh`, then `docker pull gcc`
 Wait for it, then you may run the app.
 You should get the gcc version printed on the screen.
 
-###Linux
+### Linux
 Linux ssie xD

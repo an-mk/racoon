@@ -31,7 +31,7 @@ function gccDetect(){
 		return container.exec.create({
 		AttachStdout: true,
 		AttachStderr: true,
-		Cmd: [ 'gcc', '--version', ]
+		Cmd: [ 'gcc', '--version']
 		})
 	})
 	.then((exec) => {
@@ -45,4 +45,4 @@ function gccDetect(){
   
  }
  
- module.exports =  gccDetect()
+ module.exports =  gccDetect

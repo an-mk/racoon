@@ -4,6 +4,10 @@ const app = express()
 const session = require('express-session')
 const cryptoRandomString = require('crypto-random-string')
 const dockeranchor = require('./dockeranchor.js')
+const compilers = require('./compilers.js')
+
+const program = require('commander');
+program.version('0.0.1');
 
 const port = process.env.SPRPORT || process.env.PORT ||3000
 
@@ -27,3 +31,19 @@ app.use('/api', require('./api'))
 app.get('*', (_req, res) => res.sendFile(`${__dirname}/public/index.html`))
 
 app.listen(port, () => console.log(`Running on port ${port}`))
+
+program.command('addCompiler <compilerName> <imageInDocker> <buildCommand> <outputFileName>') 
+  .alias('adc')
+  .description('Adds a compiler for the app to use.')
+  .action((a,b,c,d) => {
+	compilers.insertCompiler(a,b,c,d);
+  })
+  
+ program.command('remCompiler <compilerName>') 
+  .alias('rmc')
+  .description('Removes a compiler for the app to use.')
+  .action((a,b,c,d) => {
+	compilers.remCompiler(a);
+  })
+  
+program.parse(process.argv);
