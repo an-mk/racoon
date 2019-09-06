@@ -28,4 +28,4 @@ const remCompiler = async (name)=>{
 		.catch((err)=>console.log("Failed to delete compiler: "+err))
 		.finally(()=> process.exit(0))
 }
-module.exports = {insertCompiler, remCompiler};
+module.exports = {insertCompiler, remCompiler, Compiler};

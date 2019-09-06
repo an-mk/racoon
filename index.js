@@ -38,11 +38,25 @@ program.command('addCompiler <compilerName> <imageInDocker> <buildCommand> <outp
 	compilers.insertCompiler(a,b,c,d);
   })
   
- program.command('remCompiler <compilerName>') 
+program.command('remCompiler <compilerName>') 
   .alias('rmc')
   .description('Removes a compiler for the app to use.')
   .action((a,b,c,d) => {
 	compilers.remCompiler(a);
+  })
+  
+program.command('compile <compilerName> <pathToFile>') 
+  .alias('cmp')
+  .description('Compiles program inside a docker container. Outputs a binary file.')
+  .action((a,b) => {
+	dockeranchor.compile(a,b);
+  })
+  
+program.command('nukeDockerContainers') 
+  .alias('ndc-sure')
+  .description('Kills and deletes all docker containers. Useful if app did not exit cleanly last time.')
+  .action(() => {
+	dockeranchor.nukeContainers();
   })
   
 program.parse(process.argv);
