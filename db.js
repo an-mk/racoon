@@ -1,8 +1,9 @@
 const mongoose = require('mongoose')
 
-const dbPassword = process.env.MONGOPSWl
+const dbPassword = process.env.MONGOPSW
 const dbHost = process.env.MONGOHOST
-const dbUrl = process.env.MONGOURL || `mongodb+srv://dbUser:${dbPassword}@${dbHost}/sprawdzarka?retryWrites=true&w=majority`
+const dbUname = process.env.MONGOUNAME
+const dbUrl = process.env.MONGOURL || `mongodb+srv://${dbUname}:${dbPassword}@${dbHost}/sprawdzarka?retryWrites=true&w=majority`
 
 mongoose.connect(dbUrl, { useNewUrlParser: true, useUnifiedTopology: true }, () => {
     console.log('DB connection established')

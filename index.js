@@ -3,6 +3,7 @@ const helmet = require('helmet')
 const app = express()
 const session = require('express-session')
 const cryptoRandomString = require('crypto-random-string')
+const dockeranchor = require('./dockeranchor.js')
 
 const port = process.env.SPRPORT || process.env.PORT ||3000
 
