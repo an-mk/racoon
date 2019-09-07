@@ -2,6 +2,7 @@
 const Docker = require('node-docker-api').Docker
 const fs = require('fs');
 const compiler = require('./compilers')
+const execenv = require('./execenv')
 
 const dockerProto = process.env.RACOONDOCKERPROTO || 'http'
 const dockerHost = process.env.RACOONDOCKERHOST || '192.168.99.100'
@@ -19,6 +20,9 @@ const promisifyStreamNoSpam = (stream) => new Promise((resolve, reject) => {
   stream.on('end', resolve)
   stream.on('error', reject)
 })
+
+const fileExtension = /\.[^/\\]*(?=$)/;
+const pathToFile = /^.*[/\\]/;
 
 function gccDetect(){
 
@@ -53,7 +57,7 @@ function gccDetect(){
  Parameters:
  comp - compiler name (compilers.js)
  file - path to input file, with filename.
- [OPTIONAL] outfile - path where to put compiled file (with the new file name). Can be omitted to get the file in the working directory.
+ [OPTIONAL] outfile - path where to put compiled file (with the new file name). Can be omitted to get the file in the working directory. The file is inside a TAR archive.
  Return value:
  Promise and path. If rejected it will be .docker.log file. If resolved it will be the compiled file.
  
@@ -63,12 +67,12 @@ function gccDetect(){
  function compile(comp, file, _outfile){
 	return new Promise(async(_resolve, _reject) => {
 	
-	const outfile = _outfile || file.replace(/\.[^/\\]*(?=$)/,'.out')
+	const outfile = _outfile || file.replace(fileExtension,'.out')
 	
 	let _container;
 	var _file;
 	
-	console.log("Let's compile! "+ file.replace(/^.*[/\\]/,''));
+	console.log("Let's compile! "+ file.replace(pathToFile,''));
 	
 	const _compilerInstance = await compiler.Compiler.findOne({name : comp});
 
@@ -84,7 +88,7 @@ function gccDetect(){
 	
 	docker.container.create({
 			Image: _compilerInstance.image_name,
-			Cmd: _compilerInstance.exec_command.split(" ").concat(file.replace(/^.*[/\\]/,'')),
+			Cmd: _compilerInstance.exec_command.split(" ").concat(file.replace(pathToFile,'')),
 			AttachStdout: false,
 			AttachStderr: false,
 			tty : false
@@ -92,7 +96,7 @@ function gccDetect(){
 		})
 	.then((container) => {
 		_container = container
-		return _container.fs.put(file.replace(/\.[^/\\]*(?=$)/,'.tar'), {
+		return _container.fs.put(file.replace(fileExtension,'.tar'), {
 		path: '.'
 		})
 	})
@@ -122,7 +126,7 @@ function gccDetect(){
 				stderr: true
 			})
 			.then(stream => {
-				_file = fs.createWriteStream(outfile.replace(/\.[^/\\]*(?=$)/,'.docker.log'));
+				_file = fs.createWriteStream(outfile.replace(fileExtension,'.docker.log'));
 				stream.pipe(_file);	
 				return promisifyStreamNoSpam(stream);		
 
@@ -141,7 +145,59 @@ function gccDetect(){
 	});
  })
  }
- 
+ /** Executes a program inside docker container
+  * 
+  * @param {*} exname Name of Execution Environment
+  * @param {*} infile Path to input file
+  * @param {*} outfile Path where to redirect stout&stderr from the container.
+  */
+ function exec(exname, infile, outfile) {
+	 return new Promise( async(resolve, reject)=>{
+		const _execInstance = await execenv.ExecEnv.findOne({name : exname});
+
+		if(!_execInstance){
+			reject("Invalid ExecEnv");
+			return;
+		}
+
+		try{
+
+			const _container = await docker.container.create({
+					Image: _execInstance.image_name,
+					Cmd: _execInstance.exec_command.split(" ").concat(infile.replace(pathToFile, '')),
+					Memory: _execInstance.memory,
+					AttachStdout: false,
+					AttachStderr: false,
+					tty : false
+			})
+
+			let _unpromStream = await _container.fs.put(infile.replace(fileExtension,'.tar'), {path: '.'})
+			let _promStream = await promisifyStream(_unpromStream);
+			await _container.start();
+			await _container.wait();
+			_unpromStream = await _container.logs({
+				follow: true,
+				stdout: true,
+				stderr: true
+			})
+
+			let _file = fs.createWriteStream(outfile);
+			_unpromStream.pipe(_file);
+			await promisifyStreamNoSpam(_unpromStream);
+
+			await _container.delete({force: true});
+
+			resolve(outfile)
+			return;
+
+		}catch(err){
+			reject("Failed at execution attempt: "+err);
+			return;
+		}
+
+	 })
+ }
+
  
  async function nukeContainers(quit){
 	const shouldQuit = quit !== false;
@@ -162,4 +218,4 @@ function gccDetect(){
 	})
  }
  
- module.exports =  {gccDetect, compile, nukeContainers}
+ module.exports =  {gccDetect, compile, exec, nukeContainers}

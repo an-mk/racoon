@@ -35,7 +35,7 @@ const listCompilers = async()=>{
 		})
 	}catch(e)
 	{
-		console.log("Failed to list compilers, "+e.message);
+		console.log("Failed to list compilers, "+e);
 	}finally{
 		console.log("Command finished.");
 		process.exit(0);
