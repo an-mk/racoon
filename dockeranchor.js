@@ -49,17 +49,31 @@ function gccDetect(){
 	.catch((error) => console.log(error))
   
  }
+ /*
+ Parameters:
+ comp - compiler name (compilers.js)
+ file - path to input file, with filename.
+ [OPTIONAL] outfile - path where to put compiled file (with the new file name). Can be omitted to get the file in the working directory.
+ Return value:
+ pair (bool, path_to_file) - true on success, false on failure, and path to file. If false it will be .docker.log file. If true it will be the compiled file.
  
- function compile(comp, file){
+ Domyślnie wypluwa plik z rozszerzeniem .out.
+ Od teraz daje inny plik o tej samej nazwie z rozszerzeniem .docker.log, który zawiera logi dockera, czyli w tym przebieg kompilacji, i błędy w jej trakcie.
+ */
+ function compile(comp, file, _outfile){
 	//if(!(comp instanceof String))return false;
+	
+	const outfile = _outfile || file.replace(/\.[^/\\]*(?=$)/,'.out')
 	
 	let _container;
 	let _compilerInstance;
+	let _file;
 	
 	console.log("Let's compile! "+ file.replace(/^.*[/\\]/,''));
 	compiler.Compiler.findOne({name : comp})
 	.then((compilerInstance) => {
 			_compilerInstance = compilerInstance;
+			if(compilerInstance.shadow == true)return [true, file];
 			return docker.container.create({
 				Image: compilerInstance.image_name,
 				Cmd: compilerInstance.exec_command.split(" ").concat(file.replace(/^.*[/\\]/,'')),
@@ -84,13 +98,38 @@ function gccDetect(){
 	.then(() => _container.wait())
 	.then(() => _container.fs.get({ path: _compilerInstance.output_name }))
     .then(stream => {
-		const _file = fs.createWriteStream(file.replace(/\.[^/\\]*(?=$)/,'.out'));
+		_file = fs.createWriteStream(outfile);
 		stream.pipe(_file);
 		return promisifyStreamNoSpam(stream);
 	})
+	.then(()=>
+		_container.delete({force :true})
+	)
 	
-	.catch((err)=>console.log("Error during compilation: ", err))
-	.finally(()=>console.log("Compiling is done."));
+	.catch((err)=>{
+		console.log("Error during compilation: ", err);
+		if(_container !== undefined){
+			_container.logs({
+				follow: true,
+				stdout: true,
+				stderr: true
+			})
+			.then(stream => {
+				_file = fs.createWriteStream(outfile.replace(/\.[^/\\]*(?=$)/,'.docker.log'));
+				stream.pipe(_file);
+				return promisifyStreamNoSpam(stream);
+			})
+			.then(()=>
+				_container.delete({force: true})
+			)
+			.catch((err)=> console.log("Error while getting compilation errors." + err.message))
+		}
+		return [false, _file];
+	})
+	.finally(()=>{
+		console.log("Compiling is done.");
+		return [true, _file];
+	});
  
  }
  

@@ -34,8 +34,9 @@ app.listen(port, () => console.log(`Running on port ${port}`))
 program.command('addCompiler <compilerName> <imageInDocker> <buildCommand> <outputFileName>') 
   .alias('adc')
   .description('Adds a compiler for the app to use.')
-  .action((a,b,c,d) => {
-	compilers.insertCompiler(a,b,c,d);
+  .option('-s, --shadow', 'Is a shadow compiler.')
+  .action((a,b,c,d, cmdObj) => {
+	compilers.insertCompiler(a,b,c,d, cmdObj.shadow);
   })
   
 program.command('remCompiler <compilerName>') 
@@ -45,11 +46,18 @@ program.command('remCompiler <compilerName>')
 	compilers.remCompiler(a);
   })
   
-program.command('compile <compilerName> <pathToFile>') 
+program.command('listCompilers') 
+  .alias('lsc')
+  .description('Lists all previously configured compilers.')
+  .action(() => {
+	compilers.listCompilers();
+  })
+  
+program.command('compile <compilerName> <pathToFile> [outputPath]') 
   .alias('cmp')
   .description('Compiles program inside a docker container. Outputs a binary file.')
-  .action((a,b) => {
-	dockeranchor.compile(a,b);
+  .action((a,b,c) => {
+	dockeranchor.compile(a,b, c);
   })
   
 program.command('nukeDockerContainers') 
