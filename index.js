@@ -57,7 +57,7 @@ program.command('compile <compilerName> <pathToFile> [outputPath]')
   .alias('cmp')
   .description('Compiles program inside a docker container. Outputs a binary file.')
   .action((a,b,c) => {
-	dockeranchor.compile(a,b, c);
+	dockeranchor.compile(a,b,c).then((m)=>{console.log("Success ",+String(m))}, (err)=>{console.log("Compilation failed, but we've got logs. "+ err)});
   })
   
 program.command('nukeDockerContainers') 
