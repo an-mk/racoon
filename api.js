@@ -90,6 +90,7 @@ router.post('/problems/add', [
         return res.status(401).json({ msg: 'Not logged in as admin' })
     
     const problem = new Problem({ name: req.body.name })
+
     await problem.save((err) => {
         if (err) {
             console.error(err)
@@ -108,6 +109,7 @@ router.get('/problems/list', async (req, res) => {
 
 router.post('/submit',[
     check('problem').isString().not().isEmpty(),
+    check('code').isString().not().isEmpty()
 ], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -126,7 +128,8 @@ router.post('/submit',[
     const sol = new Solution( {
         user: req.session.name,
         problem: req.body.problem,
-        time: new Date()
+        time: new Date(),
+        code: req.body.code
     })
 
     // temporarly just insert random result
@@ -140,7 +143,7 @@ router.post('/submit',[
             return
         }
         console.log('Solution received from ' + req.session.name + ' for ' + req.body.problem)
-        res.sendStatus(200)
+        res.sendStatus(201)
     });
 })
 

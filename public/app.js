@@ -29,7 +29,7 @@ app.controller('applicationController', function ($scope, $location, notificatio
     userService.myName().then(name => $scope.$emit('login', name)).catch(() => $location.path('/login'))
 })
 
-app.controller('contestController', function ($scope, $timeout) {
+app.controller('contestController', function ($scope, $timeout, notificationService, userService) {
     window.mdc.autoInit()
 
     $scope.toggleDrawer = () => {
@@ -39,19 +39,11 @@ app.controller('contestController', function ($scope, $timeout) {
         else
             drawer.style.display = 'flex'
     }
-    $scope.problems = [{
-        name: 'Suma',
-        content: '<p>Zsumuj a i b. </p> <b>Przykładowe wejście:</b> <code>a = 2 \nb = 10 </code> <b>Przykładowe wyjście:</b> <code>12</code>'
-    },
-    {
-        name: 'B',
-        content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nibh augue, suscipit a, scelerisque sed, lacinia in, mi. Cras vel lorem. Etiam pellentesque aliquet tellus. Phasellus pharetra nulla ac diam. Quisque semper justo at risus. Donec venenatis, turpis vel hendrerit interdum, dui ligula ultricies purus, sed posuere libero dui id orci. Nam congue, pede vitae dapibus aliquet, elit magna vulputate arcu, vel tempus metus leo non est. Etiam sit amet lectus quis est congue mollis. Phasellus congue lacus eget neque. Phasellus ornare, ante vitae consectetuer consequat, purus sapien ultricies dolor, et mollis pede metus eget nisi. Praesent sodales velit quis augue. Cras suscipit, urna at aliquam rhoncus, urna quam viverra nisi, in interdum massa nibh nec erat.'
-    }]
-    $scope.currentProblem = $scope.problems[0]
-    $scope.setCurrentProblem = pr => $scope.currentProblem = pr
-    $scope.code = ''
-    $timeout(() => {
-        window.mdc.autoInit()
+    userService.problemsList().then(problems => {
+        $scope.problems = problems.map(p => ({ name: p.name, content: 'lorem ipsum' }))
+        $scope.currentProblem = $scope.problems[0]
+        $scope.setCurrentProblem = pr => $scope.currentProblem = pr
+        $scope.code = ''
         const fileInput = document.querySelector('input[type="file"]')
         fileInput.onchange = () => {
             if (fileInput.files.length) {
@@ -66,9 +58,16 @@ app.controller('contestController', function ($scope, $timeout) {
                 reader.readAsText(fileInput.files[0])
             }
         }
-    }, 0)
-    $scope.submit = console.log
-
+        $scope.submit = (source) => {
+            userService.submit($scope.currentProblem.name, source).then((data) => {
+                //TODOl
+            }).catch((err) => {
+                notificationService.show('Błąd przy wysłaniu rozwiązania')
+                console.log(err)
+            })
+        }
+        $scope.$apply()
+    })
 })
 
 app.controller('loginController', function ($scope, userService, notificationService) {
@@ -129,6 +128,11 @@ app.service('userService', function ($http) {
     this.getRanking = async function () {
         const res = await $http.get('/api/ranking')
         return res.data
+    }
+    this.submit = async function (problem, code) {
+        const res = await $http.post('/api/submit', { problem: problem, code: code })
+        if (res.status == 201) return res.data
+        throw new Error(res.data)
     }
 })
 
