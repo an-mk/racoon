@@ -32,7 +32,7 @@ router.post('/users/create', [
     if (oldUser)
         return res.status(409).json({ msg: 'Bad username or password' })
 
-    const user = new User({ name: req.body.name, pswdHash: bcrypt.hashSync(req.body.pswd, 10) });
+    const user = new User({ name: req.body.name, pswdHash: bcrypt.hashSync(req.body.pswd, 10), elevated: false });
     user.save((err) => {
         if (err) {
             console.error(err)
@@ -54,7 +54,7 @@ router.post('/login', [
         return res.status(422).json({ errors: errors.array() });
     }
 
-    const user = await User.findOne({ name: req.body.name });
+    const user = await User.findOne({ name: req.body.name })
 
     //User does not exist
     if (!user)
@@ -79,14 +79,15 @@ router.delete('/logout', (req, res) => {
 })
 
 router.post('/problems/add', [
-    check('name').isString().not().isEmpty()
+    check('name').isString().not().isEmpty(),
+    check('content').isString().not().isEmpty()
 ], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(422).json({ errors: errors.array() });
     }
     
-    const problem = new Problem({ name: req.body.name })
+    const problem = new Problem({ name: req.body.name, content: req.body.content })
     await problem.save((err) => {
         if (err) {
             console.error(err)
@@ -115,6 +116,7 @@ router.post('/submit',[
         return res.status(401).json({ msg: 'User not loged in' } )
     
     const problem = await Problem.findOne({ name: req.body.problem }).catch(err => {
+        console.log(err)
         res.sendStatus(500)
     })
     if(!problem)

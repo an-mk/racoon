@@ -23,13 +23,12 @@ app.controller('applicationController', function ($scope, $location, notificatio
         $location.path('/login')
         notificationService.show('Wylogowano')
         $scope.currentUser = ''
-        $scope.$apply()
     })
 
     userService.myName().then(name => $scope.$emit('login', name)).catch(() => $location.path('/login'))
 })
 
-app.controller('contestController', function ($scope, $timeout) {
+app.controller('contestController', function ($scope, $timeout, $async, userService) {
     window.mdc.autoInit()
 
     $scope.toggleDrawer = () => {
@@ -38,16 +37,12 @@ app.controller('contestController', function ($scope, $timeout) {
             drawer.style.display = 'none'
         else
             drawer.style.display = 'flex'
+
     }
-    $scope.problems = [{
-        name: 'Suma',
-        content: '<p>Zsumuj a i b. </p> <b>Przykładowe wejście:</b> <code>a = 2 \nb = 10 </code> <b>Przykładowe wyjście:</b> <code>12</code>'
-    },
-    {
-        name: 'B',
-        content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nibh augue, suscipit a, scelerisque sed, lacinia in, mi. Cras vel lorem. Etiam pellentesque aliquet tellus. Phasellus pharetra nulla ac diam. Quisque semper justo at risus. Donec venenatis, turpis vel hendrerit interdum, dui ligula ultricies purus, sed posuere libero dui id orci. Nam congue, pede vitae dapibus aliquet, elit magna vulputate arcu, vel tempus metus leo non est. Etiam sit amet lectus quis est congue mollis. Phasellus congue lacus eget neque. Phasellus ornare, ante vitae consectetuer consequat, purus sapien ultricies dolor, et mollis pede metus eget nisi. Praesent sodales velit quis augue. Cras suscipit, urna at aliquam rhoncus, urna quam viverra nisi, in interdum massa nibh nec erat.'
-    }]
-    $scope.currentProblem = $scope.problems[0]
+    $async(function*() {
+        $scope.problems = yield userService.problemsList()
+        $scope.currentProblem = $scope.problems[0]
+    })()
     $scope.setCurrentProblem = pr => $scope.currentProblem = pr
     $scope.code = ''
     $timeout(() => {
@@ -104,7 +99,7 @@ app.controller('rankingController', function ($scope, $timeout, userService) {
 })
 
 app.service('userService', function ($http) {
-
+    const userService = this
     this.myName = async function () {
         const res = await $http.get('/api/myname')
         return res.data
@@ -116,7 +111,7 @@ app.service('userService', function ($http) {
     }
     this.register = async function (name, pswd) {
         const res = await $http.post('/api/users/create', { name: name, pswd: pswd })
-        if (res.status == 201) return name
+        if (res.status == 201) return await userService.login(name, pswd)
         throw new Error(res.data)
     }
     this.logout = async function () {
@@ -143,3 +138,41 @@ app.service('notificationService', function () {
         snackbar.open()
     }
 })
+
+// Code from https://github.com/Magnetme/ng-async
+
+app.factory('$async', ['$q', ($q) => {
+    return generator => {
+        return function (...args) {
+            return $q((resolve, reject) => {
+                let it;
+                try {
+                    it = generator.apply(this, args);
+                } catch (e) {
+                    reject(e);
+                    return;
+                }
+                function next(val, isError = false) {
+                    let state;
+                    try {
+                        state = isError ? it.throw(val) : it.next(val);
+                    } catch (e) {
+                        reject(e);
+                        return;
+                    }
+
+                    if (state.done) {
+                        resolve(state.value);
+                    } else {
+                        $q.when(state.value)
+                            .then(next, err => {
+                                next(err, true);
+                            });
+                    }
+                }
+                //kickstart the generator function
+                next();
+            });
+        }
+    }
+}]);
