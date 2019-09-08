@@ -21,12 +21,15 @@
                         ng-repeat="user in users track by $index">
                         <td class="mdc-data-table__cell">{{user.name}}</td>
                         <td class="mdc-data-table__cell">{{user.points}}</td>
-                        <td class="mdc-data-table__cell">{{user.penalty}}</td>
+                        <td class="mdc-data-table__cell">{{toLocaleTimeString(user.penalty)}}</td>
                         <td class="mdc-data-table__cell" ng-repeat="problem in user.problems track by $index">
-                            <span ng-if="problem.time">+</span>
-                            <span ng-if="!problem.time">-</span>
-                            <span ng-if="problem.attempts">{{problem.attempts}}</span><br>
-                            <span class="mdc-typography--caption" ng-if="problem.time">{{problem.time}}</span>
+                            <span
+                                ng-style="problem.time ? {color:'rgb(76,175,80)'} : {color:'rgb(244,67,54)'}">
+                                <span ng-if="problem.time">+</span>
+                                <span ng-if="!problem.time">-</span>
+                                <span ng-if="problem.attempts">{{problem.attempts}}</span></span><br>
+                            <span class="mdc-typography--caption"
+                                ng-if="problem.time">{{toLocaleTimeString(problem.time)}}</span>
                         </td>
                     </tr>
                 </tbody>

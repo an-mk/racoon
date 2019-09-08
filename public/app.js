@@ -26,6 +26,9 @@ app.controller('applicationController', function ($scope, $location, notificatio
     })
 
     userService.myName().then(name => $scope.$emit('login', name)).catch(() => $location.path('/login'))
+
+    $scope.toLocaleTimeString = number => new Date(number).toLocaleTimeString()
+    $scope.toLocaleString = number => new Date(number).toLocaleString()
 })
 
 app.controller('contestController', function ($scope, $timeout, $async, userService, notificationService) {
@@ -39,10 +42,22 @@ app.controller('contestController', function ($scope, $timeout, $async, userServ
             drawer.style.display = 'flex'
 
     }
-    $async(function* () {
-        $scope.problems = yield userService.problemsList()
-        $scope.currentProblem = $scope.problems[0]
-    })()
+    $scope.refresh = $async(function* () {
+        if ($scope.problems) {
+            for (let i = 0; i < $scope.problems.length; i++) {
+                $scope.problems[i].solutions = yield userService.getSolutions($scope.problems[i].name)
+            }
+        }
+        else {
+            $scope.problems = yield userService.problemsList()
+            for (let i = 0; i < $scope.problems.length; i++) {
+                $scope.problems[i].solutions = yield userService.getSolutions($scope.problems[i].name)
+            }
+            $scope.currentProblem = $scope.problems[0]
+        }
+
+    })
+    $scope.refresh()
     $scope.setCurrentProblem = pr => $scope.currentProblem = pr
     $scope.code = ''
     $timeout(() => {
@@ -65,6 +80,7 @@ app.controller('contestController', function ($scope, $timeout, $async, userServ
     $scope.submit = (source) => {
         userService.submit($scope.currentProblem.name, source).then((data) => {
             //TODOl
+            $scope.refresh()
             notificationService.show('Wysłano rozwiązanie')
         }).catch((err) => {
             notificationService.show('Błąd przy wysłaniu rozwiązania')
@@ -136,6 +152,10 @@ app.service('userService', function ($http) {
         const res = await $http.post('/api/submit', { problem: problem, code: code })
         if (res.status == 201) return res.data
         throw new Error(res.data)
+    }
+    this.getSolutions = async function (name) {
+        const res = await $http.get(`/api/solutions/${encodeURIComponent(name)}`)
+        return res.data
     }
 
 })

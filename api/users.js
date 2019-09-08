@@ -64,7 +64,7 @@ router.post('/login', [
 
     console.log('Logged in, user: ' + req.body.name + ', IP: ' + req.ip)
     req.session.name = req.body.name
-    if(user.elevated)
+    if (user.elevated)
         req.session.elevated = true
 
     res.status(200).json({ msg: 'Logged in' })

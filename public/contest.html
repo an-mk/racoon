@@ -81,5 +81,19 @@
                 </button>
             </span>
         </div>
+        <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12 card" ng-show="currentTab==1"
+            ng-repeat="solution in currentProblem.solutions track by $index">
+            <span class="mdc-typography--caption">
+                {{toLocaleString(solution.time)}}<br>
+                <span ng-style="
+                solution.result == 'OK' ? {color:'rgb(76,175,80)'} :
+                    (solution.result == 'WAITING' ? {color: 'rgb(255,152,0)'} : {color:'rgb(244,67,54)'})
+                " ng-bind="
+                solution.result == 'OK' ? 'Zaakceptowano' :
+                    (solution.result == 'WAITING' ? 'Oczekiwanie' : 'Odrzucono')
+                ">{{solution.result}}</span>
+            </span>
+            <code>{{solution.code}}</code>
+        </div>
     </div>
 </div>

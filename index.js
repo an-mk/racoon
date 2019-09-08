@@ -1,4 +1,6 @@
-﻿const express = require('express')
+﻿#!/usr/bin/env node
+
+const express = require('express')
 const helmet = require('helmet')
 const app = express()
 const session = require('express-session')
