@@ -28,7 +28,7 @@ app.controller('applicationController', function ($scope, $location, notificatio
     userService.myName().then(name => $scope.$emit('login', name)).catch(() => $location.path('/login'))
 })
 
-app.controller('contestController', function ($scope, $timeout, $async, userService) {
+app.controller('contestController', function ($scope, $timeout, $async, userService, notificationService) {
     window.mdc.autoInit()
 
     $scope.toggleDrawer = () => {
@@ -39,7 +39,7 @@ app.controller('contestController', function ($scope, $timeout, $async, userServ
             drawer.style.display = 'flex'
 
     }
-    $async(function*() {
+    $async(function* () {
         $scope.problems = yield userService.problemsList()
         $scope.currentProblem = $scope.problems[0]
     })()
@@ -62,8 +62,15 @@ app.controller('contestController', function ($scope, $timeout, $async, userServ
             }
         }
     }, 0)
-    $scope.submit = console.log
-
+    $scope.submit = (source) => {
+        userService.submit($scope.currentProblem.name, source).then((data) => {
+            //TODOl
+            notificationService.show('Wysłano rozwiązanie')
+        }).catch((err) => {
+            notificationService.show('Błąd przy wysłaniu rozwiązania')
+            console.log(err)
+        })
+    }
 })
 
 app.controller('loginController', function ($scope, userService, notificationService) {
@@ -125,6 +132,12 @@ app.service('userService', function ($http) {
         const res = await $http.get('/api/ranking')
         return res.data
     }
+    this.submit = async function (problem, code) {
+        const res = await $http.post('/api/submit', { problem: problem, code: code })
+        if (res.status == 201) return res.data
+        throw new Error(res.data)
+    }
+
 })
 
 app.service('notificationService', function () {

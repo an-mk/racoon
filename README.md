@@ -31,3 +31,9 @@ You should get the gcc version printed on the screen.
 
 ### Linux
 Linux ssie xD
+
+###
+
+```
+npm install -g ./
+```
