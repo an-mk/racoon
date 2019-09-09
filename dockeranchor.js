@@ -240,7 +240,7 @@ function exec(exname, infile, outfile, stdinfile) {
 			var _container = await docker.container.create({
 				Image: _execInstance.image_name,
 				//To tak nie działa Rudy :(
-				Cmd: splitCommands(_execInstance.exec_command.replace('[FILE]', infile.replace(pathToFile, ''))),
+				Cmd: splitCommands(_execInstance.exec_command.replace('[FILE]', infilename)),
 				Memory: _execInstance.memory,
 				AttachStdout: false,
 				AttachStderr: false,
@@ -267,7 +267,16 @@ function exec(exname, infile, outfile, stdinfile) {
 			//await _container.wait();
 
 			await asyncWait(_execInstance.time);
-			await _container.stop();
+
+			let inspection = await _container.status();
+
+			if(inspection.data.State.Status !== 'exited'){
+				await _container.kill();
+				await _container.delete({force: true});
+				reject("Time Limit Exceeded");
+				return;
+			}
+			//else await _container.stop();
 
 			_unpromStream = await _container.logs({
 				follow: true,

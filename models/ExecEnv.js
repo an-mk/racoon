@@ -6,7 +6,7 @@ const ExecEnv = db.model('ExecEnv', {
     exec_command: { type: String, required: true }, //Command to execute.
    // output_name: { type: String, required: true }, // File name to redirect output.
     memory: { type: Number, required: true }, //Max memory for the environment (in bytes).
-    time: { type: Number, required: true } //Max execution time (in ms). Temporarily defunct
+    time: { type: Number, required: true } //Max execution time (in ms).
 });
 
 module.exports = ExecEnv
