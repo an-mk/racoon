@@ -17,12 +17,24 @@ const promisifyStream = (stream) => new Promise((resolve, reject) => {
 })
 
 const promisifyStreamNoSpam = (stream) => new Promise((resolve, reject) => {
-	stream.on('end', resolve)
-	stream.on('error', reject)
+	stream.on('data', () => { }); //https://nodejs.org/api/stream.html#stream_event_data
+	stream.on('end', resolve);
+	stream.on('error', reject);
 })
 
-const fileExtension = /\.[^/\\]*(?=$)/;
+const fileExtension = /\.[^/\\\.]*(?=$)/;
 const pathToFile = /^.*[/\\]/;
+
+const asyncWait = (time) => new Promise((resolve) => {
+	setTimeout(resolve, time);
+})
+
+const splitEx = /(["'].*?["']|[^"'\s]+)/g
+const splitCommands = (str) =>
+	str.match(splitEx).map(
+		(el) => 
+			el.replace(/^["']|["']$/g, '')
+		);
 
 function gccDetect() {
 
@@ -88,7 +100,7 @@ function compile(comp, file, _outfile) {
 
 		docker.container.create({
 			Image: _compilerInstance.image_name,
-			Cmd: _compilerInstance.exec_command.split(" ").concat(file.replace(pathToFile, '')),
+			Cmd: splitCommands(_compilerInstance.exec_command).concat(file.replace(pathToFile, '')),
 			AttachStdout: false,
 			AttachStderr: false,
 			tty: false
@@ -100,7 +112,7 @@ function compile(comp, file, _outfile) {
 					path: '.'
 				})
 			})
-			.then(stream => promisifyStream(stream))
+			.then(stream => promisifyStreamNoSpam(stream))
 			.then(() =>
 				_container.start()
 			)
@@ -149,9 +161,10 @@ function compile(comp, file, _outfile) {
  * 
  * @param {*} exname Name of Execution Environment
  * @param {*} infile Path to input file
- * @param {*} outfile Path where to redirect stout&stderr from the container.
+ * @param {*} outfile Path where to put file with redirected stout&stderr from the container.
+ * @param {*} stdinfile Path to the file to be piped as stdin. (Defunct for now. Use other means e.g. /bin/bash -c "/a.out < input.txt" in ExecEnv def)
  */
-function exec(exname, infile, outfile) {
+function exec(exname, infile, outfile, stdinfile) {
 	return new Promise(async (resolve, reject) => {
 		const _execInstance = await execenv.ExecEnv.findOne({ name: exname });
 
@@ -162,19 +175,36 @@ function exec(exname, infile, outfile) {
 
 		try {
 
-			const _container = await docker.container.create({
+			var _container = await docker.container.create({
 				Image: _execInstance.image_name,
-				Cmd: _execInstance.exec_command.split(" ").concat(infile.replace(pathToFile, '')),
+				Cmd: splitCommands(_execInstance.exec_command.replace('[FILE]', infile.replace(pathToFile, ''))),
 				Memory: _execInstance.memory,
 				AttachStdout: false,
 				AttachStderr: false,
-				tty: false
+				AttachStdin: false,
+				tty: false,
+				OpenStdin: false,
+				//interactive: (stdinfile ? true : false),
 			})
-
+			console.log(splitCommands(_execInstance.exec_command.replace('[FILE]', infile.replace(pathToFile, ''))))
 			let _unpromStream = await _container.fs.put(infile.replace(fileExtension, '.tar'), { path: '.' })
-			let _promStream = await promisifyStream(_unpromStream);
+			await promisifyStreamNoSpam(_unpromStream);
 			await _container.start();
-			await _container.wait();
+
+			if (stdinfile) {
+				console.log("Redirecting input.");
+				var [_stdinstream,] = await _container.attach({ stream: true, stderr: true });
+				var _fstrm = fs.createReadStream(stdinfile);
+				_fstrm.pipe(_stdinstream) //readable->writable
+				await promisifyStream(_fstrm);
+			}
+
+
+			//await _container.wait();
+
+			await asyncWait(_execInstance.time);
+			await _container.stop();
+
 			_unpromStream = await _container.logs({
 				follow: true,
 				stdout: true,
@@ -191,6 +221,9 @@ function exec(exname, infile, outfile) {
 			return;
 
 		} catch (err) {
+			if (_container !== undefined) {
+				_container.delete({ force: true }).catch((e) => console.log("Failed to clean up after exec error, it is still alive! " + e));
+			}
 			reject("Failed at execution attempt: " + err);
 			return;
 		}

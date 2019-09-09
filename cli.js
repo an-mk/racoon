@@ -35,14 +35,14 @@ program.command('compile <compilerName> <pathToFile> [outputPath]')
         dockeranchor.compile(a, b, c).then((m) => { console.log("Success " + m) }, (err) => { console.log("Compilation failed, but we've got logs. " + err) });
     })
 //---------------------
-program.command('exec <execEnvName> <pathToFile> <outputPath>')
+program.command('exec <execEnvName> <pathToFile> <outputPath> [fileToStdin]')
     .alias('e')
     .description('Executes program inside a docker container. Outputs a file.')
-    .action((a, b, c) => {
-        dockeranchor.exec(a, b, c).then((m) => { console.log("Exec success " + m) }, (err) => { console.log("Exec failed, with reason: " + err) });
+    .action((a, b, c, d) => {
+        dockeranchor.exec(a, b, c, d).then((m) => { console.log("Exec success " + m) }, (err) => { console.log("Exec failed, with reason: " + err) });
     })
 
-program.command('addExecEnv <envName> <imageInDocker> <execCommand> <outputFileName> <memLimit> <timeLimit>')
+program.command('addExecEnv <envName> <imageInDocker> <execCommand> <memLimit> <timeLimit>')
     .alias('adx')
     .description('Adds an execution environment for the app to use.')
     .action((...args) => {
