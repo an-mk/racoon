@@ -31,15 +31,20 @@ program.command('listCompilers')
 program.command('compile <compilerName> <pathToFile> [outputPath]')
     .alias('cmp')
     .description('Compiles program inside a docker container. Outputs a binary file.')
-    .action((a, b, c) => {
-        dockeranchor.compile(a, b, c).then((m) => { console.log("Success " + m) }, (err) => { console.log("Compilation failed, but we've got logs. " + err) });
+    .action(async (a, b, c) => {
+        await dockeranchor.compile(a, b, c).then((m) => { console.log("Success " + m) }, (err) => { console.log("Compilation failed, but we've got logs. ", err) });
+        process.exit(0)
     })
 //---------------------
 program.command('exec <execEnvName> <pathToFile> <outputPath> [fileToStdin]')
     .alias('e')
     .description('Executes program inside a docker container. Outputs a file.')
-    .action((a, b, c, d) => {
-        dockeranchor.exec(a, b, c, d).then((m) => { console.log("Exec success " + m) }, (err) => { console.log("Exec failed, with reason: " + err) });
+    .action(async (...args) => {
+        await dockeranchor.exec(...args).then((m) => { 
+            console.log('Exec Sucess: ')
+            console.log(m) 
+        }, (err) => { console.log("Exec failed, with reason: " + err) });
+        process.exit(0)
     })
 
 program.command('addExecEnv <envName> <imageInDocker> <execCommand> <memLimit> <timeLimit>')
@@ -67,7 +72,7 @@ program.command('nukeDockerContainers')
     .alias('ndc-sure')
     .description('Kills and deletes all docker containers. Useful if app did not exit cleanly last time.')
     .action(() => {
-        dockeranchor.nukeContainers();
+        dockeranchor.nukeContainers(true);
     })
 
 program.parse(process.argv);

@@ -3,10 +3,11 @@ const Docker = require('node-docker-api').Docker
 const fs = require('fs');
 const compiler = require('./compilers')
 const execenv = require('./execenv')
+const tar = require('tar')
 
 const dockerProto = process.env.RACOONDOCKERPROTO || 'http'
-const dockerHost = process.env.RACOONDOCKERHOST || '192.168.99.100'
-const dockerPort = process.env.RACOONDOCKERPORT || 2376
+const dockerHost = process.env.RACOONDOCKERHOST || '127.0.0.1'
+const dockerPort = process.env.RACOONDOCKERPORT || 2375
 
 const docker = new Docker({ protocol: dockerProto, host: dockerHost, port: dockerPort })
 
@@ -76,7 +77,66 @@ Promise and path. If rejected it will be .docker.log file. If resolved it will b
 Domyślnie wypluwa plik z rozszerzeniem .out.
 Od teraz daje inny plik o tej samej nazwie z rozszerzeniem .docker.log, który zawiera logi dockera, czyli w tym przebieg kompilacji, i błędy w jej trakcie.
 */
-function compile(comp, file, _outfile) {
+async function compile(comp, file, _outfile) {
+	const logs = new Array()
+	try {
+		const outfile = _outfile || file.replace(fileExtension, '.out')
+		console.log("Let's compile! " + file.replace(pathToFile, ''));
+
+		const compilerInstance = await compiler.Compiler.findOne({ name: comp });
+
+		if (!compilerInstance)
+			throw ("Invalid compiler name");
+
+		if (compilerInstance.shadow === true)
+			return file
+
+		await tar.c({ file: file.replace(fileExtension, '.tar') }, [file])
+
+		const container = await docker.container.create({
+			Image: compilerInstance.image_name,
+			Cmd: splitCommands(compilerInstance.exec_command).concat(file.replace(pathToFile, '')),
+			AttachStdout: false,
+			AttachStderr: false,
+			tty: false
+		})
+
+		await container.fs.put(file.replace(fileExtension, '.tar'), { path: '.' })
+			.then(stream => promisifyStream(stream))
+		await container.start()
+		await container.logs({
+			follow: true,
+			stdout: true,
+			stderr: true
+		}).then(stream => new Promise((resolve, reject) => {
+			stream.on('data', (d) => logs.push(d.toString()))
+			stream.on('end', resolve)
+			stream.on('error', reject)
+		}))
+		await container.wait()
+
+		await container.fs.get({ path: compilerInstance.output_name })
+			.then(stream => {
+				const file = fs.createWriteStream(outfile)
+				stream.pipe(file)
+				return promisifyStreamNoSpam(stream)
+			})
+		await container.delete({ force: true })
+		const realoutfile = await new Promise((resolve, _reject) => {
+			tar.t({
+				file: outfile,
+				onentry: entry => resolve(entry.path)
+			})
+		})
+		await tar.x({ file: outfile })
+		fs.renameSync(realoutfile, outfile)
+		return outfile
+	} catch (err) {
+		if (logs.length) throw logs.join()
+		throw err
+	}
+}
+/*function compile(comp, file, _outfile) {
 	return new Promise(async (_resolve, _reject) => {
 
 		const outfile = _outfile || file.replace(fileExtension, '.out')
@@ -152,11 +212,11 @@ function compile(comp, file, _outfile) {
 				else _reject(err);
 
 			})
-			.finally(() => {
+			.then(() => {
 				console.log("Compiling is done.");
 			});
 	})
-}
+}*/
 /** Executes a program inside docker container
  * 
  * @param {*} exname Name of Execution Environment
@@ -174,9 +234,11 @@ function exec(exname, infile, outfile, stdinfile) {
 		}
 
 		try {
+			const infilename = infile.replace(pathToFile, '')
 
 			var _container = await docker.container.create({
 				Image: _execInstance.image_name,
+				//To tak nie działa Rudy :(
 				Cmd: splitCommands(_execInstance.exec_command.replace('[FILE]', infile.replace(pathToFile, ''))),
 				Memory: _execInstance.memory,
 				AttachStdout: false,
@@ -186,7 +248,7 @@ function exec(exname, infile, outfile, stdinfile) {
 				OpenStdin: false,
 				//interactive: (stdinfile ? true : false),
 			})
-			console.log(splitCommands(_execInstance.exec_command.replace('[FILE]', infile.replace(pathToFile, ''))))
+			await tar.c({ file: infile.replace(fileExtension, '.tar') }, [infile])
 			let _unpromStream = await _container.fs.put(infile.replace(fileExtension, '.tar'), { path: '.' })
 			await promisifyStreamNoSpam(_unpromStream);
 			await _container.start();
@@ -210,14 +272,21 @@ function exec(exname, infile, outfile, stdinfile) {
 				stdout: true,
 				stderr: true
 			})
+			await _container.wait();
 
-			let _file = fs.createWriteStream(outfile);
-			_unpromStream.pipe(_file);
-			await promisifyStreamNoSpam(_unpromStream);
+			//let _file = fs.createWriteStream(outfile);
+			//_unpromStream.pipe(_file);
+			const logs = new Array()
+
+			await new Promise((resolve, reject) => {
+				_unpromStream.on('data', (d) => logs.push(d.toString()))
+				_unpromStream.on('end', resolve)
+				_unpromStream.on('error', reject)
+			})
 
 			await _container.delete({ force: true });
 
-			resolve(outfile)
+			resolve(logs.join().trim())
 			return;
 
 		} catch (err) {
@@ -237,13 +306,13 @@ async function nukeContainers(quit) {
 
 	var conts = await docker.container.list({ all: true });
 	console.log("NUKING DOCKER!, containers=", conts.length);
-	var promises = conts.map(function (cont) {
-		let cname = undefined
+	var promises = conts.map(cont => {
+		const cname = cont.data.Names[0]
 		return cont.start()
-			.then(() => cont.kill())
+			//.then(() => cont.kill())
 			.then(() => cont.delete({ force: true }))
 			.catch((err) => console.log("There is always a catch. Nuking docker failed. Try: docker kill $(docker ps -aq) && docker rm $(docker ps -aq) , on the docker machine instead. " + err))
-			.finally(() => console.log(`Nuking ${cname} done`));
+			.then(() => console.log(`Nuking ${cname} done`));
 	})
 
 	Promise.all(promises).then(function () {
