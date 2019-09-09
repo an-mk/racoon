@@ -13,8 +13,9 @@ const insertCompiler = async (name, img, exec, out, _shadow) => {
 	comp.save()
 		.then(() => console.log("Compiler added."))
 		.catch((err) => console.log("Failed to add compiler to the database: " + err))
-		.finally(() => process.exit(0))
-	//process.exit(0);
+		.then(() => process.exit(0))
+	//	Return of comp.save() is 'thenable' but not Promise
+	//	and there's no finally method in it.
 }
 
 const listCompilers = async () => {
@@ -38,6 +39,6 @@ const remCompiler = async (name) => {
 	Compiler.deleteOne({ name: name })
 		.then(() => console.log("Compiler deleted."))
 		.catch((err) => console.log("Failed to delete compiler: " + err))
-		.finally(() => process.exit(0))
+		.then(() => process.exit(0))
 }
 module.exports = { insertCompiler, remCompiler, listCompilers, Compiler };

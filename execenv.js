@@ -11,7 +11,7 @@ const insertExecEnv = async (name, img, exec, out, memory, time) => {
 	comp.save()
 		.then(() => console.log("ExecEnv added."))
 		.catch((err) => console.log("Failed to add ExecEnv to the database: " + err))
-		.finally(() => process.exit(0))
+		.then(() => process.exit(0))
 }
 
 const listExecEnvs = async () => {
@@ -33,7 +33,7 @@ const remExecEnv = async (name) => {
 	ExecEnv.deleteOne({ name: name })
 		.then(() => console.log("ExecEnv deleted."))
 		.catch((err) => console.log("Failed to delete ExecEnv: " + err))
-		.finally(() => process.exit(0))
+		.then(() => process.exit(0))
 }
 
 module.exports = { insertExecEnv, remExecEnv, listExecEnvs, ExecEnv };
