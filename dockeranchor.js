@@ -4,6 +4,10 @@ const fs = require('fs');
 const compiler = require('./compilers')
 const execenv = require('./execenv')
 const tar = require('tar')
+const path = require('path')
+const { promisify } = require('util')
+const unlinkAsync = promisify(fs.unlink)
+
 
 const dockerProto = process.env.RACOONDOCKERPROTO || 'http'
 const dockerHost = process.env.RACOONDOCKERHOST || '127.0.0.1'
@@ -62,35 +66,48 @@ file - path to input file, with filename.
 Return value:
 Promise and path. If rejected it will be .docker.log file. If resolved it will be the compiled file.
  
-Domyślnie wypluwa plik z rozszerzeniem .out.
+Domyślnie wypluwa plik z rozszerzeniem .tar, bo jest to archiwum tar.
 Od teraz daje inny plik o tej samej nazwie z rozszerzeniem .docker.log, który zawiera logi dockera, czyli w tym przebieg kompilacji, i błędy w jej trakcie.
 */
 async function compile(comp, file, _outfile) {
 	const logs = new Array()
 	try {
-		const outfile = _outfile || file.replace(fileExtension, '.out')
-		console.log("Let's compile! " + file.replace(pathToFile, ''));
+		
+		const fileBasename = path.basename(file)
+		const filePureBasename = path.basename(file, path.extname(file))
+		const fileDirname = path.dirname(file)
+		const outfile = _outfile || file.replace(fileExtension, '.tar')
+
+		console.log(`Let's compile! ${fileBasename}`);
 
 		const compilerInstance = await compiler.Compiler.findOne({ name: comp });
 
 		if (!compilerInstance)
-			throw ("Invalid compiler name");
+			throw ('Invalid compiler name');
 
 		if (compilerInstance.shadow === true)
 			return file
 
-		await tar.c({ file: file.replace(fileExtension, '.tar') }, [file])
+		await tar.c({
+			file: `${filePureBasename}.tar`,
+			cwd: fileDirname
+		}, [fileBasename])
 
 		const container = await docker.container.create({
 			Image: compilerInstance.image_name,
-			Cmd: compilerInstance.exec_command.split(' ').concat(file.replace(pathToFile, '')),
+			// Example of exec_command 
+			//"gcc_-lstdc++_-std=c++17_-O2_-o_a.out_${this.file}"
+			Cmd: ((template, vars) => {
+				return new Function('return `' + template + '`;').call(vars)
+			})(compilerInstance.exec_command, { file: fileBasename }).split('_'),
 			AttachStdout: false,
 			AttachStderr: false,
 			tty: false
 		})
 
-		await container.fs.put(file.replace(fileExtension, '.tar'), { path: '.' })
+		await container.fs.put(`${filePureBasename}.tar`, { path: '.' })
 			.then(stream => promisifyStream(stream))
+		await unlinkAsync(`${filePureBasename}.tar`)
 		await container.start()
 		await container.logs({
 			follow: true,
@@ -110,108 +127,28 @@ async function compile(comp, file, _outfile) {
 				return promisifyStreamNoSpam(stream)
 			})
 		await container.delete({ force: true })
-		const realoutfile = await new Promise((resolve, _reject) => {
+		/*const realOutfile = await new Promise((resolve, _reject) => {
 			tar.t({
 				file: outfile,
 				onentry: entry => resolve(entry.path)
 			})
 		})
 		await tar.x({ file: outfile })
-		fs.renameSync(realoutfile, outfile)
+		await renameAsync(realOutfile, outfile)*/
 		return outfile
 	} catch (err) {
 		if (logs.length) throw logs.join()
 		throw err
 	}
 }
-/*function compile(comp, file, _outfile) {
-	return new Promise(async (_resolve, _reject) => {
 
-		const outfile = _outfile || file.replace(fileExtension, '.out')
-
-		let _container;
-		var _file;
-
-		console.log("Let's compile! " + file.replace(pathToFile, ''));
-
-		const _compilerInstance = await compiler.Compiler.findOne({ name: comp });
-
-		if (!_compilerInstance) {
-			_reject("Invalid compiler name");
-			return;
-		}
-
-		if (_compilerInstance.shadow === true) {
-			_resolve(file);
-			return;
-		}
-
-		docker.container.create({
-			Image: _compilerInstance.image_name,
-			Cmd: _compilerInstance.exec_command.split(" ").concat(file.replace(pathToFile, '')),
-			AttachStdout: false,
-			AttachStderr: false,
-			tty: false
-
-		})
-			.then((container) => {
-				_container = container
-				return _container.fs.put(file.replace(fileExtension, '.tar'), {
-					path: '.'
-				})
-			})
-			.then(stream => promisifyStream(stream))
-			.then(() =>
-				_container.start()
-			)
-			.then(() => _container.wait())
-			.then(() => _container.fs.get({ path: _compilerInstance.output_name }))
-			.then(stream => {
-				_file = fs.createWriteStream(outfile);
-				stream.pipe(_file);
-				return promisifyStreamNoSpam(stream);
-			})
-			.then(() =>
-				_container.delete({ force: true })
-			)
-			.then(() =>
-				_resolve(_file.path)
-			)
-			.catch((err) => {
-				console.log("Error during compilation: ", err);
-				if (_container !== undefined) {
-					_container.logs({
-						follow: true,
-						stdout: true,
-						stderr: true
-					})
-						.then(stream => {
-							_file = fs.createWriteStream(outfile.replace(fileExtension, '.docker.log'));
-							stream.pipe(_file);
-							return promisifyStreamNoSpam(stream);
-
-						})
-						.then(() => {
-							_container.delete({ force: true })
-							_reject(_file.path)
-						})
-						.catch((err) => console.log("Error while getting compilation errors." + err.message))
-				}
-				else _reject(err);
-
-			})
-			.then(() => {
-				console.log("Compiling is done.");
-			});
-	})
-}*/
 /** Executes a program inside docker container
  * 
- * @param {*} exname Name of Execution Environment
- * @param {*} infile Path to input file
- * @param {*} outfile Path where to redirect stout&stderr from the container.
+ * @param {string} exname Name of Execution Environment
+ * @param {string} infile Path to input file, expects *.tar file
+ * @returns {string} Output from running command
  */
-function exec(exname, infile, outfile) {
+function exec(exname, infile) {
 	return new Promise(async (resolve, reject) => {
 		const _execInstance = await execenv.ExecEnv.findOne({ name: exname });
 
@@ -225,16 +162,18 @@ function exec(exname, infile, outfile) {
 
 			const _container = await docker.container.create({
 				Image: _execInstance.image_name,
-				//TODO: Make it universal
-				Cmd: [`bash', '-c', 'chmod +x ${infilename} ; ./${infilename}`],//_execInstance.exec_command.split(" ").concat(infile.replace(pathToFile, '')),
+				//_execInstance.exec_command can be template string, it splits with '_'
+				// example: "bash_-c_chmod +x a.out ; ./a.out"
+				Cmd: ((template, vars) => {
+					return new Function('return `' + template + '`;').call(vars)
+				})(_execInstance.exec_command, { file: infilename }).split('_'),
 				Memory: _execInstance.memory,
 				AttachStdout: false,
 				AttachStderr: false,
 				tty: false
 			})
-			await tar.c({ file: infile.replace(fileExtension, '.tar') }, [infile])
-			let _unpromStream = await _container.fs.put(infile.replace(fileExtension, '.tar'), { path: '.' })
-			let _promStream = await promisifyStream(_unpromStream);
+			let _unpromStream = await _container.fs.put(infile, { path: '.' })
+			await promisifyStream(_unpromStream);
 			await _container.start();
 
 			_unpromStream = await _container.logs({
@@ -256,7 +195,7 @@ function exec(exname, infile, outfile) {
 
 			await _container.delete({ force: true });
 
-			resolve(logs.join().trim())
+			resolve(logs.join().replace(/[^\x20-\x7E]/g, '').trim())
 			return;
 
 		} catch (err) {

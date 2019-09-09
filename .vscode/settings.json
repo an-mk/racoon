@@ -4,6 +4,7 @@
         "execnv",
         "infilename",
         "onentry",
+        "promisify",
         "pswd",
         "realoutfile",
         "snackbar"

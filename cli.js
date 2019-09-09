@@ -3,7 +3,10 @@
 const dockeranchor = require('./dockeranchor.js')
 const compilers = require('./compilers.js')
 const execnv = require('./execenv.js')
-const program = require('commander');
+const program = require('commander')
+const fs = require('fs')
+const { promisify } = require('util')
+const writeFileAsync = promisify(fs.writeFile)
 program.version(require('./package.json').version);
 
 program.command('addCompiler <compilerName> <imageInDocker> <buildCommand> <outputFileName>')
@@ -40,9 +43,10 @@ program.command('exec <execEnvName> <pathToFile> <outputPath>')
     .alias('e')
     .description('Executes program inside a docker container. Outputs a file.')
     .action(async (a, b, c) => {
-        await dockeranchor.exec(a, b, c).then((m) => { 
+        await dockeranchor.exec(a, b).then(async (m) => { 
             console.log('Sucess: ')
-            console.log(m) 
+            console.log(m)
+            await writeFileAsync(c, m)
         }, (err) => { console.log("Exec failed, with reason: " + err) });
         process.exit(0)
     })
