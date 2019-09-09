@@ -91,7 +91,7 @@ async function compile(comp, file, _outfile) {
 		if (compilerInstance.shadow === true)
 			return file
 
-		await tar.c({ file: file.replace(fileExtension, '.tar') }, [file])
+		await tar.c({ file: file.replace(fileExtension, '.tar'), C: file.match(pathToFile)[0] }, [file.replace(pathToFile, '')])
 
 		const container = await docker.container.create({
 			Image: compilerInstance.image_name,
@@ -132,6 +132,7 @@ async function compile(comp, file, _outfile) {
 		fs.renameSync(realoutfile, outfile)
 		return outfile
 	} catch (err) {
+		if(container !== undefined)await container.delete({force: true})
 		if (logs.length) throw logs.join()
 		throw err
 	}
@@ -248,7 +249,8 @@ function exec(exname, infile, outfile, stdinfile) {
 				OpenStdin: false,
 				//interactive: (stdinfile ? true : false),
 			})
-			await tar.c({ file: infile.replace(fileExtension, '.tar') }, [infile])
+			//await tar.c({ file: infile.replace(fileExtension, '.tar'), C: infile.match(pathToFile)[0] }, [infile.replace(pathToFile, '')])
+			//Jeszcze nie, muszę ogarnąć podłączanie stdin. Jeśli się nie uda może się okazać że będziemy przesyłać w archiwum parę: exec i dane.
 			let _unpromStream = await _container.fs.put(infile.replace(fileExtension, '.tar'), { path: '.' })
 			await promisifyStreamNoSpam(_unpromStream);
 			await _container.start();
@@ -272,10 +274,7 @@ function exec(exname, infile, outfile, stdinfile) {
 				stdout: true,
 				stderr: true
 			})
-			await _container.wait();
 
-			//let _file = fs.createWriteStream(outfile);
-			//_unpromStream.pipe(_file);
 			const logs = new Array()
 
 			await new Promise((resolve, reject) => {
