@@ -11,4 +11,8 @@ mongoose.connect(dbUrl, { useNewUrlParser: true, useUnifiedTopology: true }).the
 
 mongoose.connection.on('error', err => console.error(err))
 
+if (process.env.MONGODEBUG == 'true') {
+    mongoose.set('debug', true)
+}
+
 module.exports = mongoose

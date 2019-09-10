@@ -2,6 +2,8 @@ const router = require('express').Router()
 const { check, validationResult } = require('express-validator')
 const Problem = require('../models/Problem')
 const Solution = require('../models/Solution')
+const solutionQueue = require('../solutionQueue')
+
 
 
 router.post('/problems/add', [
@@ -77,18 +79,17 @@ router.post('/submit', [
         code: req.body.code
     })
 
-    // temporarly just insert random result
-    const results = ["WAITING", "OK", "BAD"]
-    sol.result = results[Math.floor(Math.random() * results.length)]
-
     await sol.save((err) => {
         if (err) {
             console.error(err)
             res.sendStatus(500)
             return
         }
+
         console.log('Solution received from ' + req.session.name + ' for ' + req.body.problem)
         res.sendStatus(201)
+
+        solutionQueue.push(sol)
     })
 })
 
