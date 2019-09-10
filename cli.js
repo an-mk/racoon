@@ -39,11 +39,11 @@ program.command('compile <compilerName> <pathToFile> [outputPath]')
         process.exit(0)
     })
 //---------------------
-program.command('exec <execEnvName> <pathToFile> <outputPath>')
+program.command('exec <execEnvName> <pathToFile> <outputPath> [fileToStdin]')
     .alias('e')
     .description('Executes program inside a docker container. Outputs a file.')
-    .action(async (a, b, c) => {
-        await dockeranchor.exec(a, b).then(async (m) => { 
+    .action(async (a, b, c, ...args) => {
+        await dockeranchor.exec(a, b, ...args).then(async (m) => { 
             console.log('Sucess: ')
             console.log(m)
             await writeFileAsync(c, m)
@@ -51,7 +51,7 @@ program.command('exec <execEnvName> <pathToFile> <outputPath>')
         process.exit(0)
     })
 
-program.command('addExecEnv <envName> <imageInDocker> <execCommand> <outputFileName> <memLimit> <timeLimit>')
+program.command('addExecEnv <envName> <imageInDocker> <execCommand> <memLimit> <timeLimit>')
     .alias('adx')
     .description('Adds an execution environment for the app to use.')
     .action((...args) => {

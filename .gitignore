@@ -2,3 +2,4 @@
 *.batman
 style.css
 prepare_console.bat
+/tests

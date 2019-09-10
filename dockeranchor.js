@@ -15,19 +15,38 @@ const dockerPort = process.env.RACOONDOCKERPORT || 2375
 
 const docker = new Docker({ protocol: dockerProto, host: dockerHost, port: dockerPort })
 
-const promisifyStream = (stream) => new Promise((resolve, reject) => {
-	stream.on('data', (d) => console.log(d.toString()))
-	stream.on('end', resolve)
-	stream.on('error', reject)
-})
+function promisifyStream(stream) {
+	return new Promise((resolve, reject) => {
+		stream.on('data', (d) => console.log(d.toString()))
+		stream.on('end', resolve)
+		stream.on('error', reject)
+	})
+}
 
-const promisifyStreamNoSpam = (stream) => new Promise((resolve, reject) => {
-	stream.on('end', resolve)
-	stream.on('error', reject)
-})
+function promisifyStreamNoSpam(stream) {
+	return new Promise((resolve, reject) => {
+		stream.on('data', () => { }); //https://nodejs.org/api/stream.html#stream_event_data
+		stream.on('end', resolve);
+		stream.on('error', reject);
+	})
+}
 
-const fileExtension = /\.[^/\\]*(?=$)/;
+const fileExtension = /\.[^/\\\.]*(?=$)/;
 const pathToFile = /^.*[/\\]/;
+
+function asyncWait(time) {
+	return new Promise((resolve) => {
+		setTimeout(resolve, time);
+	})
+}
+
+const splitEx = /(["'].*?["']|[^"'\s]+)/g
+function splitCommands(str) {
+	return str.match(splitEx).map(
+		(el) =>
+			el.replace(/^["']|["']$/g, '')
+	);
+}
 
 function gccDetect() {
 
@@ -72,7 +91,7 @@ Od teraz daje inny plik o tej samej nazwie z rozszerzeniem .docker.log, który z
 async function compile(comp, file, _outfile) {
 	const logs = new Array()
 	try {
-		
+
 		const fileBasename = path.basename(file)
 		const filePureBasename = path.basename(file, path.extname(file))
 		const fileDirname = path.dirname(file)
@@ -95,11 +114,18 @@ async function compile(comp, file, _outfile) {
 
 		const container = await docker.container.create({
 			Image: compilerInstance.image_name,
+			// compilerInstance.exec_command can be template string, it splits with '_'
 			// Example of exec_command 
-			//"gcc_-lstdc++_-std=c++17_-O2_-o_a.out_${this.file}"
+			// "gcc_-lstdc++_-std=c++17_-O2_-o_a.out_${this.file}"
+			// or
+			// "gcc_-lstdc++_-std=c++17_-O2_-o_${this.file+'.out'}_${this.file}"
+			// (but outputs are never exctracted from tar so they could have the same name)
+			// It's more flexible
 			Cmd: ((template, vars) => {
 				return new Function('return `' + template + '`;').call(vars)
 			})(compilerInstance.exec_command, { file: fileBasename }).split('_'),
+			// Cmd: splitCommands(compilerInstance.exec_command).concat(file.replace(pathToFile, '')),
+			// file name could be required to be first argument or appear more than once in compiler commands of some weird languages :D
 			AttachStdout: false,
 			AttachStderr: false,
 			tty: false
@@ -127,16 +153,9 @@ async function compile(comp, file, _outfile) {
 				return promisifyStreamNoSpam(stream)
 			})
 		await container.delete({ force: true })
-		/*const realOutfile = await new Promise((resolve, _reject) => {
-			tar.t({
-				file: outfile,
-				onentry: entry => resolve(entry.path)
-			})
-		})
-		await tar.x({ file: outfile })
-		await renameAsync(realOutfile, outfile)*/
 		return outfile
 	} catch (err) {
+		if (container !== undefined) await container.delete({ force: true })
 		if (logs.length) throw logs.join()
 		throw err
 	}
@@ -145,10 +164,11 @@ async function compile(comp, file, _outfile) {
 /** Executes a program inside docker container
  * 
  * @param {string} exname Name of Execution Environment
- * @param {string} infile Path to input file, expects *.tar file
+ * @param {string} infile Path to input file, expects *.tar file 
+ * @param {*} stdinfile Path to the file to be piped as stdin. (Defunct for now. Use other means e.g. /bin/bash -c "/a.out < input.txt" in ExecEnv def)
  * @returns {string} Output from running command
  */
-function exec(exname, infile) {
+function exec(exname, infile, stdinfile) {
 	return new Promise(async (resolve, reject) => {
 		const _execInstance = await execenv.ExecEnv.findOne({ name: exname });
 
@@ -160,31 +180,62 @@ function exec(exname, infile) {
 		try {
 			const infilename = infile.replace(pathToFile, '')
 
-			const _container = await docker.container.create({
+			var _container = await docker.container.create({
 				Image: _execInstance.image_name,
-				//_execInstance.exec_command can be template string, it splits with '_'
-				// example: "bash_-c_chmod +x a.out ; ./a.out"
+				// _execInstance.exec_command can be template string, it splits with '_'
+				// Example of exec_command:
+				// "bash_-c_chmod +x a.out ; ./a.out" 
+				// (results in ['bash', '-c', 'chmod +x a.out ; ./a.out'])
+				// or
+				// "bash_-c_chmod +x ${this.file} ; ./${this.file}"
 				Cmd: ((template, vars) => {
 					return new Function('return `' + template + '`;').call(vars)
 				})(_execInstance.exec_command, { file: infilename }).split('_'),
+				// To tak nie działa Rudy :(
+				// Teraz działa (Now it works :)
+				//Cmd: splitCommands(_execInstance.exec_command.replace('[FILE]', infilename)),
 				Memory: _execInstance.memory,
 				AttachStdout: false,
 				AttachStderr: false,
-				tty: false
+				AttachStdin: false,
+				tty: false,
+				OpenStdin: false,
+				//interactive: (stdinfile ? true : false),
 			})
-			let _unpromStream = await _container.fs.put(infile, { path: '.' })
-			await promisifyStream(_unpromStream);
+			//await tar.c({ file: infile.replace(fileExtension, '.tar'), C: infile.match(pathToFile)[0] }, [infile.replace(pathToFile, '')])
+			//Jeszcze nie, muszę ogarnąć podłączanie stdin. Jeśli się nie uda może się okazać że będziemy przesyłać w archiwum parę: exec i dane.
+			const _unpromStream = await _container.fs.put(infile.replace(fileExtension, '.tar'), { path: '.' })
+			await promisifyStreamNoSpam(_unpromStream);
 			await _container.start();
+
+			if (stdinfile) {
+				console.log("Redirecting input.");
+				var [_stdinstream,] = await _container.attach({ stream: true, stderr: true });
+				var _fstrm = fs.createReadStream(stdinfile);
+				_fstrm.pipe(_stdinstream) //readable->writable
+				await promisifyStream(_fstrm);
+			}
+
+			//await _container.wait();
+
+			await asyncWait(_execInstance.time);
+
+			const inspection = await _container.status();
+
+			if (inspection.data.State.Status !== 'exited') {
+				await _container.kill();
+				await _container.delete({ force: true });
+				reject("Time Limit Exceeded");
+				return;
+			}
+			//else await _container.stop();
 
 			_unpromStream = await _container.logs({
 				follow: true,
 				stdout: true,
 				stderr: true
 			})
-			await _container.wait();
 
-			//let _file = fs.createWriteStream(outfile);
-			//_unpromStream.pipe(_file);
 			const logs = new Array()
 
 			await new Promise((resolve, reject) => {
@@ -199,6 +250,9 @@ function exec(exname, infile) {
 			return;
 
 		} catch (err) {
+			if (_container !== undefined) {
+				_container.delete({ force: true }).catch((e) => console.log("Failed to clean up after exec error, it is still alive! " + e));
+			}
 			reject("Failed at execution attempt: " + err);
 			return;
 		}

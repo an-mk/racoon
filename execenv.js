@@ -1,7 +1,7 @@
 const ExecEnv = require("./models/ExecEnv")
 
-const insertExecEnv = async (name, img, exec, out, memory, time) => {
-	const comp = new ExecEnv({ name: name, image_name: img, exec_command: exec, output_name: out, memory: memory, time: time });
+const insertExecEnv = async (name, img, exec, memory, time) => {
+	const comp = new ExecEnv({ name: name, image_name: img, exec_command: exec, memory: memory, time: time });
 	const isFound = await ExecEnv.findOne({ name: name });
 
 	if (isFound) ExecEnv.deleteOne({ name: name })
