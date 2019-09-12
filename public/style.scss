@@ -9,7 +9,7 @@ $mdc-shape-large-component-radius: 16px;
 @import "material-components-web/material-components-web";
 @import url("https://fonts.googleapis.com/css?family=Roboto+Slab&display=swap");
 
-@keyframes show {
+/*@keyframes show {
   0% {
     visibility: hidden;
     opacity: 0;
@@ -20,9 +20,13 @@ $mdc-shape-large-component-radius: 16px;
   }
 }
 
-* {
+ * {
   animation: mdc-animation-enter(show, 350ms);
 }
+.view-line, .view-line > *, .view-line > * > * {
+  animation: none;
+}
+*/
 
 html,
 body {
@@ -122,15 +126,15 @@ td {
 }
 
 .fab {
-  z-index: 999;
+  z-index: 5;
   position: fixed;
-  bottom: calc(2rem + 56px);
-  right: 2rem;
+  bottom: calc(16px + 56px);
+  left: calc(50% - 85px);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 599px) {
   .fab {
-    bottom: calc(2rem + 64px);
-    right: 2rem;
+    bottom: calc(16px + 64px);
+    left: calc(50% - 85px);
   }
 }

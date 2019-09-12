@@ -4,34 +4,42 @@ const app = angular.module('app', ['ngRoute', 'ngSanitize'])
             enabled: true,
             requireBase: false
         })
-        $routeProvider.when('/', { controller: 'contestController', templateUrl: 'contest.html' })
-        $routeProvider.when('/login', { controller: 'loginController', templateUrl: 'login.html' })
-        $routeProvider.when('/ranking', { controller: 'rankingController', templateUrl: 'ranking.html' })
+        $routeProvider.when('/', { redirectTo: '/contest' })
+        $routeProvider.when('/contest', {
+            controller: function ($location, $async, userService) {
+                $async(function* () {
+                    const problems = yield userService.problemsList()
+                    $location.path(`/contest/${problems[0].name}`)
+                })()
+            }, template: ''
+        })
+        $routeProvider.when('/contest/:problemName', { controller: 'contestController', templateUrl: '/contest.html' })
+        $routeProvider.when('/login', { controller: 'loginController', templateUrl: '/login.html' })
+        $routeProvider.when('/ranking', { controller: 'rankingController', templateUrl: '/ranking.html' })
+        $routeProvider.otherwise({ redirectTo: '/' })
     })
 
 app.controller('applicationController', function ($scope, $location, notificationService, userService) {
     window.mdc.autoInit()
 
     $scope.$on('login', function (_, name) {
-        $location.path('/')
         notificationService.show(`Witaj, ${name}`)
         $scope.currentUser = name
         $scope.$apply()
     })
 
     $scope.$on('logout', function () {
-        $location.path('/login')
         notificationService.show('Wylogowano')
         $scope.currentUser = ''
     })
 
-    userService.myName().then(name => $scope.$emit('login', name)).catch(() => $location.path('/login'))
+    userService.myName().then(name => $scope.$emit('login', name)).catch(() => { })
 
     $scope.toLocaleTimeString = number => new Date(number).toLocaleTimeString()
     $scope.toLocaleString = number => new Date(number).toLocaleString()
 })
 
-app.controller('contestController', function ($scope, $timeout, $async, userService, notificationService) {
+app.controller('contestController', function ($scope, $location, $async, $routeParams, userService, notificationService) {
     window.mdc.autoInit()
 
     $scope.toggleDrawer = () => {
@@ -43,42 +51,37 @@ app.controller('contestController', function ($scope, $timeout, $async, userServ
 
     }
     $scope.refresh = $async(function* () {
-        if ($scope.problems) {
-            for (let i = 0; i < $scope.problems.length; i++) {
-                $scope.problems[i].solutions = yield userService.getSolutions($scope.problems[i].name)
-            }
-        }
-        else {
+        if (!$scope.problems)
             $scope.problems = yield userService.problemsList()
-            for (let i = 0; i < $scope.problems.length; i++) {
-                $scope.problems[i].solutions = yield userService.getSolutions($scope.problems[i].name)
-            }
-            $scope.currentProblem = $scope.problems[0]
+
+        if (!$routeParams.problemName) {
+            $location.path(`/contest/${$scope.problems[0].name}`)
+
         }
+        for (let i = 0; i < $scope.problems.length; i++) {
+            $scope.problems[i].solutions = yield userService.getSolutions($scope.problems[i].name)
+            if ($routeParams.problemName == $scope.problems[i].name)
+                $scope.currentProblem = $scope.problems[i]
+        }
+
 
     })
     $scope.refresh()
-    $scope.setCurrentProblem = pr => $scope.currentProblem = pr
-    $scope.code = ''
-    $timeout(() => {
-        window.mdc.autoInit()
-        const fileInput = document.querySelector('input[type="file"]')
-        fileInput.onchange = () => {
-            if (fileInput.files.length) {
-                const reader = new FileReader()
-                reader.onload = () => {
-                    $scope.code = reader.result
-                    $scope.$apply()
-                    const textarea = document.querySelector('textarea')
-                    textarea.focus()
-                    textarea.oninput()
-                }
-                reader.readAsText(fileInput.files[0])
+    let editor, editorContainer
+    
+    const fileInput = document.querySelector('input[type="file"]')
+    fileInput.onchange = () => {
+        if (fileInput.files.length) {
+            const reader = new FileReader()
+            reader.onload = () => {
+                editor.setValue(reader.result)
             }
+            reader.readAsText(fileInput.files[0])
         }
-    }, 0)
-    $scope.submit = (source) => {
-        userService.submit($scope.currentProblem.name, source).then((data) => {
+    }
+
+    $scope.submit = () => {
+        userService.submit($scope.currentProblem.name, editor.getValue(), editor.getModel().getModeId()).then(() => {
             //TODOl
             $scope.refresh()
             notificationService.show('Wysłano rozwiązanie')
@@ -87,6 +90,71 @@ app.controller('contestController', function ($scope, $timeout, $async, userServ
             console.log(err)
         })
     }
+
+    $scope.languages = [
+        {
+            name: 'C++',
+            monacoName: 'cpp',
+            codeSnippet: `#include <iostream>
+using namespace std;
+
+int main() {
+	cout<<"Hello, World!";
+	return 0;
+}`
+        },
+        {
+            name: 'C',
+            monacoName: 'c',
+            codeSnippet: `#include <stdio.h>
+
+int main(void) {
+    printf("Hello, World!");
+    return 0;
+}`
+        },
+        {
+            name: 'Java',
+            monacoName: 'java',
+            codeSnippet: `import java.util.*;
+import java.lang.*;
+import java.io.*;
+
+class Main
+{
+    public static void main (String[] args) throws java.lang.Exception
+    {
+        System.out.println("Hello, World!");
+    }
+}`
+        },
+        {
+            name: 'Python',
+            monacoName: 'python',
+            codeSnippet: `print("Hello, World!")`
+        }
+    ]
+
+    $scope.updateMonaco = (language) => {
+        editor.setModel(monaco.editor.createModel(
+            language.codeSnippet,
+            language.monacoName
+        ))
+    }
+
+    (async function () {
+        while (!window.monaco)
+            await new Promise(resolve => setTimeout(resolve, 100))
+        editorContainer = document.getElementById('container')
+        editor = monaco.editor.create(editorContainer, {
+            value: $scope.languages[0].codeSnippet,
+            language: $scope.languages[0].monacoName,
+            minimap: { enabled: false },
+            automaticLayout: true,
+            scrollBeyondLastLine: false
+        })
+    })()
+
 })
 
 app.controller('loginController', function ($scope, userService, notificationService) {
@@ -111,7 +179,7 @@ app.controller('loginController', function ($scope, userService, notificationSer
     }
 })
 
-app.controller('rankingController', function ($scope, $timeout, userService) {
+app.controller('rankingController', function ($scope, userService) {
     window.mdc.autoInit()
 
     userService.getRanking().then(res => {
@@ -138,7 +206,7 @@ app.service('userService', function ($http) {
         throw new Error(res.data)
     }
     this.logout = async function () {
-        const res = await $http.delete('/api/logout')
+        await $http.delete('/api/logout')
     }
     this.problemsList = async function () {
         const res = await $http.get('/api/problems/list')
