@@ -14,8 +14,8 @@ router.get('/myname', (req, res) => {
 })
 
 router.get('/amiadmin', (req, res) => {
-    if (req.session.elevated === undefined) res.send('nay')
-    else res.send('ye')
+    if (req.session.elevated === undefined) res.send(false)
+    else res.send(true)
 })
 
 router.post('/users/create', [

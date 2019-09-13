@@ -1,0 +1,37 @@
+<div class="mdc-layout-grid center">
+    <div class="mdc-layout-grid__inner">
+
+        <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12 card">
+            <div class="mdc-typography--headline5" style="text-align: center;">Wszystkie zgłoszenia</div>
+            <div class="mdc-text-field mdc-text-field--outlined" data-mdc-auto-init="MDCTextField">
+                <input type="text" id="user" class="mdc-text-field__input" ng-model="searchKeyword">
+                <div class="mdc-notched-outline">
+                    <div class="mdc-notched-outline__leading"></div>
+                    <div class="mdc-notched-outline__notch">
+                        <label for="user" class="mdc-floating-label">Wyszukaj</label>
+                    </div>
+                    <div class="mdc-notched-outline__trailing"></div>
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12 card"
+            ng-repeat="solution in solutions | filter:comparator track by $index">
+            <span class="mdc-typography--caption">
+                {{toLocaleString(solution.time)}}<br>
+                <span ng-style="
+                solution.result == 'OK' ? {color:'rgb(76,175,80)'} :
+                    (solution.result == 'WAITING' ? {color: 'rgb(255,152,0)'} : {color:'rgb(244,67,54)'})
+                " ng-bind="
+                solution.result == 'OK' ? 'Zaakceptowano' :
+                    (solution.result == 'WAITING' ? 'Oczekiwanie' : solution.result)
+                ">{{solution.result}}</span><br>
+                {{solution.problem}}<br>
+                {{solution.user}}
+            </span>
+            <code>{{solution.code}}</code>
+        </div>
+    </div>
+</div>

@@ -54,6 +54,15 @@ router.get('/solutions/:problem', [
     return res.status(200).json(solutions)
 })
 
+router.get('/solutions', async (req, res) => {
+
+    if (!req.session.elevated)
+        return res.status(401).json({ msg: 'Not logged in as admin' })
+
+    const solutions = await Solution.find({}, null, { sort: { time: -1 } }).lean()
+    return res.status(200).json(solutions)
+})
+
 router.post('/submit', [
     check('problem').isString().not().isEmpty(),
     check('code').isString().not().isEmpty()

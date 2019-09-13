@@ -114,17 +114,16 @@ async function compile(comp, file, _outfile) {
 
 		const container = await docker.container.create({
 			Image: compilerInstance.image_name,
-			// compilerInstance.exec_command can be template string, it splits with '_'
+			// compilerInstance.exec_command can be template string, it splits with ' '
+			// '_' is a non-splitting space
 			// Example of exec_command 
-			// "gcc_-lstdc++_-std=c++17_-O2_-o_a.out_${this.file}"
+			// "gcc -lstdc++ -std=c++17 -O2 -o a.out ${this.file}"
 			// or
-			// "gcc_-lstdc++_-std=c++17_-O2_-o_${this.file+'.out'}_${this.file}"
+			// "gcc -lstdc++ -std=c++17 -O2 -o ${this.file+'.out'} ${this.file}"
 			// (but outputs are never exctracted from tar so they could have the same name)
-			// It's more flexible
 			Cmd: ((template, vars) => {
 				return new Function('return `' + template + '`;').call(vars)
-			})(compilerInstance.exec_command, { file: fileBasename }).split('_'),
-			// Cmd: splitCommands(compilerInstance.exec_command).concat(file.replace(pathToFile, '')),
+			})(compilerInstance.exec_command, { file: fileBasename }).split(' ').map(el => el.replace(/_/g, ' ')),
 			// file name could be required to be first argument or appear more than once in compiler commands of some weird languages :D
 			AttachStdout: false,
 			AttachStderr: false,
@@ -184,16 +183,13 @@ function exec(exname, infile, stdinfile) {
 				Image: _execInstance.image_name,
 				// _execInstance.exec_command can be template string, it splits with '_'
 				// Example of exec_command:
-				// "bash_-c_chmod +x a.out ; ./a.out" 
+				// "bash -c chmod_+x_a.out_;_./a.out" 
 				// (results in ['bash', '-c', 'chmod +x a.out ; ./a.out'])
 				// or
-				// "bash_-c_chmod +x ${this.file} ; ./${this.file}"
+				// "bash -c chmod_+x_${this.file}_;_./${this.file}"
 				Cmd: ((template, vars) => {
 					return new Function('return `' + template + '`;').call(vars)
-				})(_execInstance.exec_command, { file: infilename }).split('_'),
-				// To tak nie działa Rudy :(
-				// Teraz działa (Now it works :)
-				//Cmd: splitCommands(_execInstance.exec_command.replace('[FILE]', infilename)),
+				})(_execInstance.exec_command, { file: infilename }).split(' ').map(el => el.replace(/_/g, ' ')),
 				Memory: _execInstance.memory,
 				AttachStdout: false,
 				AttachStderr: false,

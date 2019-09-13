@@ -15,6 +15,7 @@ const app = angular.module('app', ['ngRoute', 'ngSanitize'])
         })
         $routeProvider.when('/contest/:problemName', { controller: 'contestController', templateUrl: '/contest.html' })
         $routeProvider.when('/login', { controller: 'loginController', templateUrl: '/login.html' })
+        $routeProvider.when('/admin', { controller: 'adminController', templateUrl: '/admin.html' })
         $routeProvider.when('/ranking', { controller: 'rankingController', templateUrl: '/ranking.html' })
         $routeProvider.otherwise({ redirectTo: '/' })
     })
@@ -39,25 +40,22 @@ app.controller('applicationController', function ($scope, $location, notificatio
     $scope.toLocaleString = number => new Date(number).toLocaleString()
 })
 
-app.controller('contestController', function ($scope, $location, $async, $routeParams, userService, notificationService) {
+app.controller('contestController', function ($scope, $async, $routeParams, userService, notificationService) {
     window.mdc.autoInit()
 
     $scope.toggleDrawer = () => {
         const drawer = document.querySelector('.mdc-drawer')
         if (drawer.style.display == 'flex')
             drawer.style.display = 'none'
-        else
-            drawer.style.display = 'flex'
+
+        drawer.style.display = 'flex'
 
     }
     $scope.refresh = $async(function* () {
+        console.log($scope.problems)
         if (!$scope.problems)
             $scope.problems = yield userService.problemsList()
 
-        if (!$routeParams.problemName) {
-            $location.path(`/contest/${$scope.problems[0].name}`)
-
-        }
         for (let i = 0; i < $scope.problems.length; i++) {
             $scope.problems[i].solutions = yield userService.getSolutions($scope.problems[i].name)
             if ($routeParams.problemName == $scope.problems[i].name)
@@ -68,7 +66,7 @@ app.controller('contestController', function ($scope, $location, $async, $routeP
     })
     $scope.refresh()
     let editor, editorContainer
-    
+
     const fileInput = document.querySelector('input[type="file"]')
     fileInput.onchange = () => {
         if (fileInput.files.length) {
@@ -82,7 +80,6 @@ app.controller('contestController', function ($scope, $location, $async, $routeP
 
     $scope.submit = () => {
         userService.submit($scope.currentProblem.name, editor.getValue(), editor.getModel().getModeId()).then(() => {
-            //TODOl
             $scope.refresh()
             notificationService.show('Wysłano rozwiązanie')
         }).catch((err) => {
@@ -157,6 +154,21 @@ class Main
 
 })
 
+app.controller('adminController', function ($scope, $async, adminService) {
+    window.mdc.autoInit()
+    $scope.searchKeyword = ''
+
+    $scope.refresh = $async(function* () {
+        $scope.solutions = yield adminService.getSolutions()
+    })
+    $scope.refresh()
+
+    $scope.comparator = (actual) => {
+        const objStr = Object.entries(actual).reduce((acc, el) => acc + ' ' + el[1], '')
+        return $scope.searchKeyword.split(/\s+/).every(el => objStr.includes(el))
+    }
+})
+
 app.controller('loginController', function ($scope, userService, notificationService) {
     window.mdc.autoInit()
     $scope.login = (name, pswd) => {
@@ -177,6 +189,12 @@ app.controller('loginController', function ($scope, userService, notificationSer
         userService.logout()
         $scope.$emit('logout')
     }
+    $scope.$on('login', () => {
+        userService.amIAdmin().then(res => {
+            $scope.admin = res
+            $scope.$apply()
+        })
+    })
 })
 
 app.controller('rankingController', function ($scope, userService) {
@@ -191,6 +209,11 @@ app.controller('rankingController', function ($scope, userService) {
 
 app.service('userService', function ($http) {
     const userService = this
+    this.amIAdmin = async function () {
+        const res = await $http.get('/api/amiadmin')
+        console.log(res)
+        return res.data
+    }
     this.myName = async function () {
         const res = await $http.get('/api/myname')
         return res.data
@@ -225,7 +248,13 @@ app.service('userService', function ($http) {
         const res = await $http.get(`/api/solutions/${encodeURIComponent(name)}`)
         return res.data
     }
+})
 
+app.service('adminService', function ($http) {
+    this.getSolutions = async function () {
+        const res = await $http.get('/api/solutions')
+        return res.data
+    }
 })
 
 app.service('notificationService', function () {
