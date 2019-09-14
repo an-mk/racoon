@@ -9,6 +9,27 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons">
     <link rel="stylesheet" href="/style.css">
     <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/monaco-editor@0.18.0/min/vs/loader.js"></script>
+    <script>
+        require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.18.0/min/vs/' } })
+        window.MonacoEnvironment = {
+            getWorkerUrl: (workerId, label) => {
+                return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+        self.MonacoEnvironment = {
+          baseUrl: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.18.0/min/'
+        };
+        importScripts('https://cdn.jsdelivr.net/npm/monaco-editor@0.18.0/min/vs/base/worker/workerMain.js');`
+                )}`
+            }
+        }
+        window.monacoLoaded = new Promise(resolve => {
+            require(['vs/editor/editor.main'], () => {
+                console.log('monaco loaded')
+                resolve()
+            })
+        })
+    </script>
 </head>
 
 <body ng-app="app" ng-controller="applicationController" class="mdc-typography">
@@ -22,7 +43,7 @@
                 <span class="mdc-top-app-bar__title">Racoon</span>
             </section>
             <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end" role="toolbar">
-                <a href="/" class="mdc-top-app-bar__title mdc-top-app-bar__action-item">Zadania</a>
+                <a href="/contest" class="mdc-top-app-bar__title mdc-top-app-bar__action-item">Zadania</a>
                 <a href="/ranking" class="mdc-top-app-bar__title mdc-top-app-bar__action-item">Ranking</a>
                 <a href="/login" class="mdc-top-app-bar__title mdc-top-app-bar__action-item">Konto</a>
             </section>
@@ -43,30 +64,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.7.8/angular-route.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.7.8/angular-sanitize.min.js"></script>
     <script src="/app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/monaco-editor@0.18.0/min/vs/loader.js"></script>
-    <script>
-        require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.18.0/min/vs/' } });
-
-        // Before loading vs/editor/editor.main, define a global MonacoEnvironment that overwrites
-        // the default worker url location (used when creating WebWorkers). The problem here is that
-        // HTML5 does not allow cross-domain web workers, so we need to proxy the instantiation of
-        // a web worker through a same-domain script
-        window.MonacoEnvironment = {
-            getWorkerUrl: function (workerId, label) {
-                return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
-        self.MonacoEnvironment = {
-          baseUrl: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.18.0/min/'
-        };
-        importScripts('https://cdn.jsdelivr.net/npm/monaco-editor@0.18.0/min/vs/base/worker/workerMain.js');`
-                )}`;
-            }
-        };
-
-        require(["vs/editor/editor.main"], function () {
-            // ...
-        });
-    </script>
 </body>
 
 </html>

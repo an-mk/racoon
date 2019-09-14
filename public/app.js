@@ -52,7 +52,6 @@ app.controller('contestController', function ($scope, $async, $routeParams, user
 
     }
     $scope.refresh = $async(function* () {
-        console.log($scope.problems)
         if (!$scope.problems)
             $scope.problems = yield userService.problemsList()
 
@@ -61,8 +60,6 @@ app.controller('contestController', function ($scope, $async, $routeParams, user
             if ($routeParams.problemName == $scope.problems[i].name)
                 $scope.currentProblem = $scope.problems[i]
         }
-
-
     })
     $scope.refresh()
     let editor, editorContainer
@@ -133,15 +130,13 @@ class Main
     ]
 
     $scope.updateMonaco = (language) => {
-        editor.setModel(monaco.editor.createModel(
-            language.codeSnippet,
-            language.monacoName
-        ))
+        monaco.editor.setModelLanguage(editor.getModel(), language.monacoName)
+        editor.setValue(language.codeSnippet)
+
     }
 
     (async function () {
-        while (!window.monaco)
-            await new Promise(resolve => setTimeout(resolve, 100))
+        await window.monacoLoaded
         editorContainer = document.getElementById('container')
         editor = monaco.editor.create(editorContainer, {
             value: $scope.languages[0].codeSnippet,
@@ -150,6 +145,12 @@ class Main
             automaticLayout: true,
             scrollBeyondLastLine: false
         })
+        if (monaco.editor.getModels().length > 1) {
+            editor.setModel(monaco.editor.getModels()[0])
+            while (monaco.editor.getModels().length > 1)
+                monaco.editor.getModels()[1].dispose()
+        }
+
     })()
 
 })

@@ -6,7 +6,8 @@
     "scripts": {
         "start": "node index.js",
         "compile": "./node_modules/.bin/node-sass  ./public/style.scss -o ./public/ --include-path ./node_modules/",
-        "prepare": "./node_modules/.bin/node-sass  ./public/style.scss -o ./public/ --include-path ./node_modules/"
+        "prepare": "./node_modules/.bin/node-sass  ./public/style.scss -o ./public/ --include-path ./node_modules/",
+        "test": "./node_modules/.bin/protractor"
     },
     "author": "",
     "license": "",
@@ -30,5 +31,10 @@
     "bin": {
         "racoon": "./cli.js",
         "racoon-server": "./index.js"
+    },
+    "devDependencies": {
+        "chai": "^4.2.0",
+        "mocha": "^6.2.0",
+        "protractor": "^5.4.2"
     }
 }
