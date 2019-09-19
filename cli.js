@@ -3,6 +3,7 @@
 const dockeranchor = require('./dockeranchor.js')
 const compilers = require('./compilers.js')
 const execnv = require('./execenv.js')
+const lang = require('./langs.js')
 const program = require('commander')
 const fs = require('fs')
 const { promisify } = require('util')
@@ -70,6 +71,28 @@ program.command('listExecEnvs')
     .description('Lists all previously configured exec environments.')
     .action(() => {
         execnv.listExecEnvs();
+    })
+//-----------------
+
+program.command('addLang <name> <nameInMonaco> <codeSnippet> <compiler> <execEnv>')
+    .alias('alang')
+    .description('Adds a programming language.')
+    .action((...args) => {
+        lang.insertLang(...args);
+    })
+
+program.command('remLang <name>')
+    .alias('rlang')
+    .description('Removes a language.')
+    .action((a) => {
+        lang.remLang(a);
+    })
+
+program.command('listLangs')
+    .alias('langs')
+    .description('Lists all programming languages.')
+    .action(() => {
+        lang.listLangs();
     })
 //-----------------
 program.command('nukeDockerContainers')
