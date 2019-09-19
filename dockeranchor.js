@@ -165,7 +165,7 @@ async function compile(comp, file, _outfile) {
  * @param {string} exname Name of Execution Environment
  * @param {string} infile Path to input file, expects *.tar file 
  * @param {*} stdinfile Path to the file to be piped as stdin. (Defunct for now. Use other means e.g. /bin/bash -c "/a.out < input.txt" in ExecEnv def)
- * @returns {string} Output from running command
+ * @returns {string} Array containing output from running command. 0 is stdout, 1 is stderr
  */
 function exec(exname, infile, stdinfile) {
 	return new Promise(async (resolve, reject) => {
@@ -200,7 +200,7 @@ function exec(exname, infile, stdinfile) {
 			})
 			//await tar.c({ file: infile.replace(fileExtension, '.tar'), C: infile.match(pathToFile)[0] }, [infile.replace(pathToFile, '')])
 			//Jeszcze nie, muszę ogarnąć podłączanie stdin. Jeśli się nie uda może się okazać że będziemy przesyłać w archiwum parę: exec i dane.
-			const _unpromStream = await _container.fs.put(infile.replace(fileExtension, '.tar'), { path: '.' })
+			var _unpromStream = await _container.fs.put(infile.replace(fileExtension, '.tar'), { path: '.' })
 			await promisifyStreamNoSpam(_unpromStream);
 			await _container.start();
 
@@ -232,17 +232,30 @@ function exec(exname, infile, stdinfile) {
 				stderr: true
 			})
 
-			const logs = new Array()
+			const logs = new Array('','','')
 
 			await new Promise((resolve, reject) => {
-				_unpromStream.on('data', (d) => logs.push(d.toString()))
+				_unpromStream.on('data', (d) => {
+					switch(d.toString().charCodeAt(0)){
+						case 1: //stdout+(prawie zawsze)stdin
+							logs[0] = logs[0].concat(d.toString().substr(8, d.toString().length)); //https://docs.docker.com/engine/api/v1.40/#operation/ContainerAttach;
+							break;
+						case 2: //stderr
+							logs[1] = logs[1].concat(d.toString().substr(8, d.toString().length));
+							break;
+						default: //stdin (sam)
+							logs[2] = logs[2].concat(d.toString().substr(8, d.toString().length));
+							break;
+					}
+				})
 				_unpromStream.on('end', resolve)
 				_unpromStream.on('error', reject)
 			})
 
 			await _container.delete({ force: true });
 
-			resolve(logs.join().replace(/[^\x20-\x7E]/g, '').trim())
+			//resolve(logs.join().replace(/[^\x20-\x7E]/g, '').trim())
+			resolve(logs);
 			return;
 
 		} catch (err) {
