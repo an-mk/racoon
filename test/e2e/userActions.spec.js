@@ -4,7 +4,7 @@ const Solution = require('../../models/Solution')
 
 describe('User actions', function () {
     it('Create account', async function () {
-        this.timeout(4500)
+        this.timeout(6000)
         const username = 'Abc xyz ' + Math.random().toString().substring(2)
         const password = '12345678' + Math.random().toString().substring(2)
 
@@ -19,7 +19,7 @@ describe('User actions', function () {
         expect(await element(by.css('section[ng-if="!currentUser"] > span')).getText()).to.equals('Racoon')
     })
     it('Login and logout', async function () {
-        this.timeout(5000)
+        this.timeout(6000)
         const username = 'Abc xyz ' + Math.random().toString().substring(2)
         const password = '12345678' + Math.random().toString().substring(2)
 
@@ -41,7 +41,7 @@ describe('User actions', function () {
         expect(await element(by.css('section[ng-if="!currentUser"] > span')).getText()).to.equals('Racoon')
     })
     it('Post solution', async function () {
-        this.timeout(5000)
+        this.timeout(6000)
         const username = 'Abc xyz ' + Math.random().toString().substring(2)
         const password = '12345678' + Math.random().toString().substring(2)
         const code = 'float xyz = ' + Math.random().toString().substring(2)
@@ -54,15 +54,13 @@ describe('User actions', function () {
         element(by.css('a[href="/contest"]')).click()
         element(by.css('#radio-1')).click()
         browser.executeScript(`this.monaco.editor.getModels()[0].setValue('${code}')`)
-        browser.executeScript('window.scrollTo(0, 2000)')
         element(by.css('button[ng-click="submit()"]')).click()
-        browser.executeScript('window.scrollTo(0, 0)')
         element(by.css('button[ng-show="currentUser"]')).click()
         expect(await element(by.css('code')).getText()).to.equals(code)
     })
     it('Ranking', async function () {
         // TOO SLOW :'(
-        this.timeout(16000)
+        this.timeout(19000)
         const username = 'Abc xyz ' + Math.random().toString().substring(2)
         const password = '12345678' + Math.random().toString().substring(2)
         const code = 'int xyz = ' + Math.random().toString().substring(2)
@@ -75,13 +73,12 @@ describe('User actions', function () {
         element(by.css('a[href="/contest"]')).click()
         element(by.css('#radio-1')).click()
         browser.executeScript(`this.monaco.editor.getModels()[0].setValue('${code}')`)
-        browser.executeScript('window.scrollTo(0, 2000)')
         element(by.css('button[ng-click="submit()"]')).click()
         element(by.css('a[href="/ranking"]')).click()
         //Time for checking solution
-        await new Promise(r => setTimeout(r, 14000))
+        await new Promise(r => setTimeout(r, 16000))
         browser.refresh()
-        await new Promise(r => setTimeout(r, 1000))
+        await new Promise(r => setTimeout(r, 2000))
         expect(await element(by.css('tr > td')).getText()).to.equals(username)
     })
     afterEach(async function () {

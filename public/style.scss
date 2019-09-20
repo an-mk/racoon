@@ -102,12 +102,24 @@ td {
 }
 
 .center {
-  padding-bottom: calc(64px + 16px);
+  padding-bottom: 16px;
 }
 
 @media (max-width: 599px) {
   .center {
-    padding-bottom: calc(56px + 16px);
+    padding-bottom: 16px;
+  }
+}
+
+div[ng-view] {
+  height: calc(100% - 64px);
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
+
+@media (max-width: 599px) {
+  div[ng-view] {
+    height: calc(100% - 56px);
   }
 }
 

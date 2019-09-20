@@ -34,7 +34,7 @@ router.get('/problems/list', async (req, res) => {
     return res.status(200).json(problems)
 })
 
-router.get('/solutions/:problem', [
+router.get('/solutions/for/:problem', [
     check('problem').isString().not().isEmpty()
 ], async (req, res) => {
     const errors = validationResult(req)
@@ -54,13 +54,17 @@ router.get('/solutions/:problem', [
     return res.status(200).json(solutions)
 })
 
-router.get('/solutions', async (req, res) => {
+router.get('/solutions/all', async (req, res) => {
 
     if (!req.session.elevated)
         return res.status(401).json({ msg: 'Not logged in as admin' })
 
     const solutions = await Solution.find({}, null, { sort: { time: -1 } }).lean()
     return res.status(200).json(solutions)
+})
+
+router.get('/solutions/my', async (req, res) => {
+    return res.status(200).json(await Solution.find({ user: req.session.name }, null, { sort: { time: -1 } }))
 })
 
 router.post('/submit', [

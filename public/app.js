@@ -1,10 +1,10 @@
-const app = angular.module('app', ['ngRoute', 'ngSanitize'])
+const app = angular.module('app', ['ngRoute', 'ngSanitize', 'googlechart'])
     .config(function ($routeProvider, $locationProvider) {
         $locationProvider.html5Mode({
             enabled: true,
             requireBase: false
         })
-        $routeProvider.when('/', { redirectTo: '/contest' })
+        $routeProvider.when('/', { redirectTo: '/login' })
         $routeProvider.when('/contest', {
             controller: function ($location, $async, userService) {
                 $async(function* () {
@@ -14,7 +14,7 @@ const app = angular.module('app', ['ngRoute', 'ngSanitize'])
             }, template: ''
         })
         $routeProvider.when('/contest/:problemName', { controller: 'contestController', templateUrl: '/contest.html' })
-        $routeProvider.when('/login', { controller: 'loginController', templateUrl: '/login.html' })
+        $routeProvider.when('/login', { controller: 'accountController', templateUrl: '/login.html' })
         $routeProvider.when('/admin', { controller: 'adminController', templateUrl: '/admin.html' })
         $routeProvider.when('/ranking', { controller: 'rankingController', templateUrl: '/ranking.html' })
         $routeProvider.otherwise({ redirectTo: '/' })
@@ -56,7 +56,7 @@ app.controller('contestController', function ($scope, $async, $routeParams, user
             $scope.problems = yield userService.problemsList()
 
         for (let i = 0; i < $scope.problems.length; i++) {
-            $scope.problems[i].solutions = yield userService.getSolutions($scope.problems[i].name)
+            $scope.problems[i].solutions = yield userService.getSolutionsFor($scope.problems[i].name)
             if ($routeParams.problemName == $scope.problems[i].name)
                 $scope.currentProblem = $scope.problems[i]
         }
@@ -135,8 +135,8 @@ class Main
 
     }
 
-    (async function () {
-        await window.monacoLoaded
+    $async(function* () {
+        yield window.monacoLoaded
         editorContainer = document.getElementById('container')
         editor = monaco.editor.create(editorContainer, {
             value: $scope.languages[0].codeSnippet,
@@ -145,11 +145,11 @@ class Main
             automaticLayout: true,
             scrollBeyondLastLine: false
         })
-        if (monaco.editor.getModels().length > 1) {
+        /*if (monaco.editor.getModels().length > 1) {
             editor.setModel(monaco.editor.getModels()[0])
             while (monaco.editor.getModels().length > 1)
                 monaco.editor.getModels()[1].dispose()
-        }
+        }*/
 
     })()
 
@@ -170,7 +170,7 @@ app.controller('adminController', function ($scope, $async, adminService) {
     }
 })
 
-app.controller('loginController', function ($scope, userService, notificationService) {
+app.controller('accountController', function ($scope, userService, notificationService) {
     window.mdc.autoInit()
     $scope.login = (name, pswd) => {
         userService.login(name, pswd).then(res => $scope.$emit('login', res))
@@ -195,6 +195,52 @@ app.controller('loginController', function ($scope, userService, notificationSer
             $scope.admin = res
             $scope.$apply()
         })
+    })
+
+    userService.getMySolutions().then(solutions => {
+        if (solutions.length == 0) return
+        const effectivenessRows = Object.entries(solutions.reduce((previous, current) => {
+            if (previous[current.result])
+                previous[current.result]++
+            else
+                previous[current.result] = 1
+            return previous
+        }, {})).map(el => {
+            return {
+                c: [
+                    { v: el[0] },
+                    { v: el[1] }
+                ]
+            }
+        })
+        /*const activenessRows = Object.entries(solutions.reduce((previous, current) => {
+            if (previous[new Date(current.time).toLocaleDateString()])
+                previous[new Date(current.time).toLocaleDateString()]++
+            else
+                previous[new Date(current.time).toLocaleDateString()] = 1
+            return previous
+        }, {})).map(el => {
+            return {
+                c: [
+                    { v: el[0] },
+                    { v: el[1] }
+                ]
+            }
+        })*/
+        $scope.effectiveness = {
+            type: 'PieChart',
+            data: {
+                cols: [
+                    { id: 1, type: 'string' },
+                    { id: 2, type: 'number' }
+                ],
+                rows: effectivenessRows
+            },
+            options: {
+                title: 'Efektywność'
+            },
+        }
+        $scope.$apply()
     })
 })
 
@@ -245,15 +291,19 @@ app.service('userService', function ($http) {
         if (res.status == 201) return res.data
         throw new Error(res.data)
     }
-    this.getSolutions = async function (name) {
-        const res = await $http.get(`/api/solutions/${encodeURIComponent(name)}`)
+    this.getSolutionsFor = async function (name) {
+        const res = await $http.get(`/api/solutions/for/${encodeURIComponent(name)}`)
+        return res.data
+    }
+    this.getMySolutions = async function () {
+        const res = await $http.get('/api/solutions/my')
         return res.data
     }
 })
 
 app.service('adminService', function ($http) {
     this.getSolutions = async function () {
-        const res = await $http.get('/api/solutions')
+        const res = await $http.get('/api/solutions/all')
         return res.data
     }
 })
