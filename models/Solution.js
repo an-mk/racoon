@@ -5,6 +5,7 @@ const solutionSchema = db.Schema({
     problem: { type: String, required: true },
     time: { type: Date, required: true, default: Date.now },
     result: { type: String, required: true, default: "WAITING" },
+    lang: {type: String, required: true},
     code: { type: String, required: true }
 })
 solutionSchema.index({ status: 1, time: 1 })

@@ -69,7 +69,8 @@ router.get('/solutions/my', async (req, res) => {
 
 router.post('/submit', [
     check('problem').isString().not().isEmpty(),
-    check('code').isString().not().isEmpty()
+    check('code').isString().not().isEmpty(),
+    check('lang').isString().not().isEmpty()
 ], async (req, res) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
@@ -86,10 +87,18 @@ router.post('/submit', [
     if (!problem)
         return res.status(400).json({ msg: 'Problem does not exits' })
 
+    const lang = await Problem.findOne({ name: req.body.lang }).catch(err => {
+            console.log(err)
+            res.sendStatus(500)
+    })
+    if (!lang)
+        return res.status(400).json({ msg: 'Programming Language does not exits' })
+
     const sol = new Solution({
         user: req.session.name,
         problem: req.body.problem,
-        code: req.body.code
+        code: req.body.code,
+        lang: req.body.lang
     })
 
     await sol.save((err) => {
