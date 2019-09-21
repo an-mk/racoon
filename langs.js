@@ -1,6 +1,6 @@
 'use strict';
 
-const Lang = require('./models/lang.js');
+const Lang = require('./models/Lang');
 
 const insertLang = async (name, monaco, snippet, compiler, execenv) => {
 	const comp = new Lang({ name: name, monacoName: monaco, codeSnippet: snippet, compiler: compiler, execenv: execenv });
@@ -13,7 +13,6 @@ const insertLang = async (name, monaco, snippet, compiler, execenv) => {
 	comp.save()
 		.then(() => console.log("Lang added."))
 		.catch((err) => console.log("Failed to add Lang to the database: " + err))
-		.then(() => process.exit(0))
 }
 
 const listLangs = async () => {
@@ -26,7 +25,6 @@ const listLangs = async () => {
 		console.log("Failed to list Langs, " + e);
 	} finally {
 		console.log("Command finished.");
-		process.exit(0);
 	}
 
 }
@@ -35,7 +33,6 @@ const remLang = async (name) => {
 	Lang.deleteOne({ name: name })
 		.then(() => console.log("Lang deleted."))
 		.catch((err) => console.log("Failed to delete Lang: " + err))
-		.then(() => process.exit(0))
 }
 
-module.exports = {insertLang, remLang, listLangs, Lang};
+module.exports = { insertLang, remLang, listLangs, Lang };
