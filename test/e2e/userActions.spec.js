@@ -59,8 +59,8 @@ describe('User actions', function () {
         expect(await element(by.css('code')).getText()).to.equals(code)
     })
     it('Ranking', async function () {
-        // TOO SLOW :'(
-        this.timeout(19000)
+        // TOO SLOW :'C
+        this.timeout(20000)
         const username = 'Abc xyz ' + Math.random().toString().substring(2)
         const password = '12345678' + Math.random().toString().substring(2)
         const code = 'int xyz = ' + Math.random().toString().substring(2)

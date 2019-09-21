@@ -3,7 +3,8 @@
 const dockeranchor = require('./dockeranchor.js')
 const compilers = require('./compilers.js')
 const execnv = require('./execenv.js')
-const lang = require('./langs.js')
+const langs = require('./langs.js')
+const problems = require('./problems.js')
 const program = require('commander')
 const fs = require('fs')
 const { promisify } = require('util')
@@ -44,7 +45,7 @@ program.command('exec <execEnvName> <pathToFile> <outputPath> [fileToStdin]')
     .alias('e')
     .description('Executes program inside a docker container. Outputs a file.')
     .action(async (a, b, c, ...args) => {
-        await dockeranchor.exec(a, b, ...args).then(async (m) => { 
+        await dockeranchor.exec(a, b, ...args).then(async (m) => {
             console.log('Sucess: ')
             console.log(m)
             await writeFileAsync(c, m)
@@ -77,22 +78,39 @@ program.command('listExecEnvs')
 program.command('addLang <name> <nameInMonaco> <codeSnippet> <compiler> <execEnv>')
     .alias('alang')
     .description('Adds a programming language.')
-    .action((...args) => {
-        lang.insertLang(...args);
+    .action((name, nameInMonaco, codeSnippet, ...args) => {
+        // Fixes escaping problems on Windows (powershell)
+        codeSnippet = codeSnippet.replace(/\\t/g, '\t').replace(/\\n/g, '\n').replace(/\\r/g, '')
+        langs.insertLang(name, nameInMonaco, codeSnippet, ...args).then(() => process.exit(0))
     })
 
 program.command('remLang <name>')
     .alias('rlang')
     .description('Removes a language.')
     .action((a) => {
-        lang.remLang(a);
+        langs.remLang(a).then(() => process.exit(0))
     })
 
 program.command('listLangs')
     .alias('langs')
     .description('Lists all programming languages.')
     .action(() => {
-        lang.listLangs();
+        langs.listLangs().then(() => process.exit(0))
+    })
+//-----------------
+program.command('addProblem <name> <content>')
+    .alias('aprb')
+    .description('Adds a problem.')
+    .action((name, content) => {
+        content = content.replace(/\\t/g, '\t').replace(/\\n/g, '\n').replace(/\\r/g, '')
+        problems.insertProblem(name, content).then(() => process.exit(0))
+    })
+
+program.command('remProblem <name>')
+    .alias('rprb')
+    .description('Removes a problem.')
+    .action((name) => {
+        problems.remProblem(name).then(() => process.exit(0))
     })
 //-----------------
 program.command('nukeDockerContainers')

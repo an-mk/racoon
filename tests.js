@@ -3,7 +3,7 @@ const Test = require('./models/Test')
 
 const { createModel } = require('mongoose-gridfs');
 
-async function createTest(problem, fileStream) {
+async function insertTest(problem, fileStream) {
     const TestFile = await createModel({
         modelName: 'TestFiles'
     })
@@ -40,4 +40,4 @@ async function deleteTest(testId) {
     Test.deleteOne( { _id: testId } )
 }
 
-module.exports = { Test, createTest, deleteTest, getTestStream }
+module.exports = { Test, insertTest, deleteTest, getTestStream }

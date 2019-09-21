@@ -8,7 +8,7 @@
 
 
             <div class="mdc-text-field mdc-text-field--outlined" data-mdc-auto-init="MDCTextField">
-                <input type="text" id="user" class="mdc-text-field__input" ng-model="username">
+                <input type="text" id="user" class="mdc-text-field__input" ng-model="username" required>
                 <div class="mdc-notched-outline">
                     <div class="mdc-notched-outline__leading"></div>
                     <div class="mdc-notched-outline__notch">
@@ -19,7 +19,7 @@
             </div>
 
             <div class="mdc-text-field mdc-text-field--outlined" data-mdc-auto-init="MDCTextField">
-                <input id="pass" class="mdc-text-field__input" type="password" ng-model="password">
+                <input id="pass" class="mdc-text-field__input" type="password" ng-model="password" required>
                 <div class="mdc-notched-outline">
                     <div class="mdc-notched-outline__leading"></div>
                     <div class="mdc-notched-outline__notch">
@@ -27,6 +27,9 @@
                     </div>
                     <div class="mdc-notched-outline__trailing"></div>
                 </div>
+            </div>
+            <div class="mdc-text-field-helper-line">
+                <div class="mdc-text-field-helper-text">Dobre hasło to nie tylko silne hasło, ale takie, które zapamiętasz.</div>
             </div>
 
             <div class="mdc-typography--body1">Pamiętaj o bezpieczeństwie swojego hasła.</div>
@@ -47,7 +50,7 @@
             <div class="mdc-typography--headline6">
                 Zalogowano jako: {{currentUser}}
             </div>
-            <div style="width: 100%; height: 320px;"  google-chart chart="effectiveness"></div>
+            <div style="width: 100%; height: 0;"  google-chart chart="effectiveness"></div>
 
             <span class="end">
                 <a href="/admin" type="button" class="mdc-button"
