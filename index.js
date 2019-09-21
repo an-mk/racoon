@@ -5,6 +5,7 @@ const helmet = require('helmet')
 const app = express()
 const session = require('express-session')
 const cryptoRandomString = require('crypto-random-string')
+const fileUpload = require('express-fileupload')
 
 const port = process.env.SPRPORT || process.env.PORT || 3000
 
@@ -17,6 +18,11 @@ app.use(session({
     saveUninitialized: false,
     cookie: { sameSite: true }
 }))
+
+app.use(fileUpload({
+    useTempFiles : true,
+    tempFileDir : '/tmp/'
+}));
 
 app.use('/', express.static(`${__dirname}/public`))
 app.get('/', (_req, res) => res.sendFile(`${__dirname}/public/index.html`))
