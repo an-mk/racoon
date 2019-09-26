@@ -3,7 +3,7 @@ const { check, validationResult } = require('express-validator')
 const Problem = require('../models/Problem')
 const Solution = require('../models/Solution')
 const Lang = require('../models/Lang')
-const solutionQueue = require('../solutionQueue')
+const solutions = require('../solutions')
 
 router.get('/for/:problem', [
     check('problem').isString().not().isEmpty()
@@ -65,24 +65,11 @@ router.post('/submit', [
     if (!lang)
         return res.status(400).json({ msg: 'Programming Language does not exits' })
 
-    const sol = new Solution({
-        user: req.session.name,
-        problem: req.body.problem,
-        code: req.body.code,
-        lang: req.body.lang
-    })
-
-    await sol.save((err) => {
-        if (err) {
-            console.error(err)
-            res.sendStatus(500)
-            return
-        }
-
-        console.log('Solution received from ' + req.session.name + ' for ' + req.body.problem)
+    solutions.insertSolution(req.session.name, req.body.problem, req.body.code, req.body.lang).then((x) => {
         res.sendStatus(201)
-
-        solutionQueue.push(sol)
+    }).catch((err) => {
+        console.log(err)
+        sendStatus(500)
     })
 })
 
