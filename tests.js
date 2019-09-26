@@ -13,7 +13,6 @@ async function insertTest(problem, fileStream) {
             throw new Error(error)
         }
         else {
-            //console.log(file)
             const test = await Test.create({ problem: problem, file: file._id })
             await Problem.findOneAndUpdate({ name: problem }, { '$push': { 'tests': test._id } })
             console.log('test for problem', problem, 'saved')
@@ -29,7 +28,7 @@ async function getTestStream(testId) {
     return TestFile.read({ fileId })
 }
 
-async function deleteTest(testId) {
+async function remTest(testId) {
     testObj = Test.findOne( { _id: testID } )
     const fileId = testObj.file
     const TestFile = await createModel({
@@ -40,4 +39,4 @@ async function deleteTest(testId) {
     Test.deleteOne( { _id: testId } )
 }
 
-module.exports = { Test, insertTest, deleteTest, getTestStream }
+module.exports = { Test, insertTest, remTest, getTestStream }

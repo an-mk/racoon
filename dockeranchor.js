@@ -154,7 +154,7 @@ async function compile(comp, file, _outfile) {
 		await container.delete({ force: true })
 		return outfile
 	} catch (err) {
-		if (container !== undefined) await container.delete({ force: true })
+		if (typeof container !== 'undefined') await container.delete({ force: true })
 		if (logs.length) throw logs.join()
 		throw err
 	}
@@ -259,7 +259,7 @@ function exec(exname, infile, stdinfile) {
 			return;
 
 		} catch (err) {
-			if (_container !== undefined) {
+			if (typeof _container !== 'undefined') {
 				_container.delete({ force: true }).catch((e) => console.log("Failed to clean up after exec error, it is still alive! " + e));
 			}
 			reject("Failed at execution attempt: " + err);

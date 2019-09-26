@@ -10,9 +10,9 @@ const insertLang = async (name, monaco, snippet, compiler, execenv) => {
 		.then(() => console.log("Overrode Lang: " + name))
 		.catch((err) => console.log("Failed to override Lang: " + err));
 
-	comp.save()
-		.then(() => console.log("Lang added."))
-		.catch((err) => console.log("Failed to add Lang to the database: " + err))
+	await comp.save()
+			  .then(() => console.log("Lang added."))
+			  .catch((err) => console.log("Failed to add Lang to the database: " + err))
 }
 
 const listLangs = async () => {
