@@ -41,14 +41,14 @@ program.command('compile <compilerName> <pathToFile> [outputPath]')
         process.exit(0)
     })
 //---------------------
-program.command('exec <execEnvName> <pathToFile> <outputPath> [fileToStdin]')
+program.command('exec <execEnvName> <pathToFile> [fileToStdin] [outputFile]')
     .alias('e')
     .description('Executes program inside a docker container. Outputs a file.')
-    .action(async (a, b, c, ...args) => {
+    .action(async (a, b, ...args) => {
         await dockeranchor.exec(a, b, ...args).then(async (m) => {
             console.log('Sucess: ')
             console.log(m)
-            await writeFileAsync(c, m)
+            if(typeof outputFile !== 'undefined')await writeFileAsync(c, m);
         }, (err) => { console.log("Exec failed, with reason: " + err) });
         process.exit(0)
     })

@@ -50,14 +50,35 @@ async function judge(solution) {
     })
 
     await dockeranchor.compile(lang.compiler, codePath).then( async (res) => {
-        await tar.extract({ file: dirPath + '/sol.tar', C: dirPath })
+        var compiledFile;
+        await tar.list({file : dirPath + '/sol.tar', onentry: entry => {compiledFile = entry.path}});
+        await tar.extract({ file: dirPath + '/sol.tar', C: dirPath });
+        console.log(`${dirPath}/${compiledFile}`)
 
-        //still random
-        await new Promise(resolve => setTimeout(resolve, 10000))
-        await solution.updateOne({ result: (Math.random() > 0.7) ? "OK" : "BAD" })
+        await dockeranchor.exec(lang.execenv , `${dirPath}/${compiledFile}`).then(async (res) => {
+            //still random
+
+            await new Promise(resolve => setTimeout(resolve, 10000))
+            await solution.updateOne({ result: (Math.random() > 0.7) ? "OK" : "BAD" })
+
+        }).catch(async (err) => {
+            if(err[0] > 0){
+                console.log("Server error while executing "+ err[1]);
+                await solution.updateOne({ result: 'Exec Server Error' });
+            }
+            else if(err[0] == 0)await solution.updateOne({ result: err[1] });
+        });
+
     }).catch( async (err) => {
-        await solution.updateOne({ result: 'CE' })
+        if(err[0] > 0){
+            console.log("Server error while compiling "+ err[1]);
+            await solution.updateOne({ result: 'Compile Server Error' });
+        }
+        else await solution.updateOne({ result: 'CE' })
     })
+
+    //still random
+
 
     await rimraf(dirPath).catch(err => {
         console.log('judge cant remove dir', err)

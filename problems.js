@@ -7,8 +7,7 @@ const insertProblem = async (name, content) => {
     if (isFound) Problem.deleteOne({ name: name })
         .then(() => console.log("Overrode Problem: " + name))
         .catch((err) => console.log("Failed to override Problem: " + err));
-
-    problem.save()
+    await problem.save()
         .then(() => console.log("Problem added."))
         .catch((err) => console.log("Failed to add Problem to the database: " + err))
 }

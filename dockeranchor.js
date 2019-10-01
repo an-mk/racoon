@@ -7,6 +7,7 @@ const tar = require('tar')
 const path = require('path')
 const { promisify } = require('util')
 const unlinkAsync = promisify(fs.unlink)
+const crypto = require('crypto')
 
 
 const dockerProto = process.env.RACOONDOCKERPROTO || 'http'
@@ -88,96 +89,119 @@ Promise and path. If rejected it will be .docker.log file. If resolved it will b
 Domyślnie wypluwa plik z rozszerzeniem .tar, bo jest to archiwum tar.
 Od teraz daje inny plik o tej samej nazwie z rozszerzeniem .docker.log, który zawiera logi dockera, czyli w tym przebieg kompilacji, i błędy w jej trakcie.
 */
+/** Compiles inside a container
+ * 
+ * @param {string} comp Compiler name. Can be referenced by ${this.file}
+ * @param {string} file Complete path to input file.
+ * @param {string} _outfile Output file path. Optional. If not specified outputs with the same name, but with .tar extension.
+ * @returns {string} Path to extracted tar archive. On fail throws pair int, string. If int is greater than zero, problem is bad compiler configuration or server error. If it's 0, problem is with the executed program (normal CE)
+ */
 async function compile(comp, file, _outfile) {
-	const logs = new Array()
-	try {
+	return new Promise(async (resolve, reject) => {
+		const logs = new Array()
+		try {
 
-		const fileBasename = path.basename(file)
-		const filePureBasename = path.basename(file, path.extname(file))
-		const fileDirname = path.dirname(file)
-		const outfile = _outfile || file.replace(fileExtension, '.tar')
+			const fileBasename = path.basename(file)
+			const filePureBasename = path.basename(file, path.extname(file))
+			const fileDirname = path.dirname(file)
+			const outfile = _outfile || file.replace(fileExtension, '.tar')
+			const tarfile = `${fileDirname}/${crypto.randomBytes(10).toString('hex')}.tar`;
 
-		console.log(`Let's compile! ${fileBasename}`);
+			console.log(`Let's compile! ${fileBasename}`);
 
-		const compilerInstance = await compiler.Compiler.findOne({ name: comp });
+			const compilerInstance = await compiler.Compiler.findOne({ name: comp });
 
-		if (!compilerInstance)
-			throw ('Invalid compiler name');
+			if (!compilerInstance)
+				reject ([1,'Invalid compiler name']);
 
-		if (compilerInstance.shadow === true)
-			return file
+			if (compilerInstance.shadow === true){
+				resolve(file);
+				return;
+			}
 
-		await tar.c({
-			file: `${filePureBasename}.tar`,
-			cwd: fileDirname
-		}, [fileBasename])
+			await tar.c({
+				file: tarfile,
+				cwd: fileDirname
+			}, [fileBasename])
 
-		const container = await docker.container.create({
-			Image: compilerInstance.image_name,
-			// compilerInstance.exec_command can be template string, it splits with ' '
-			// '_' is a non-splitting space
-			// Example of exec_command 
-			// "gcc -lstdc++ -std=c++17 -O2 -o a.out ${this.file}"
-			// or
-			// "gcc -lstdc++ -std=c++17 -O2 -o ${this.file+'.out'} ${this.file}"
-			// (but outputs are never exctracted from tar so they could have the same name)
-			Cmd: ((template, vars) => {
-				return new Function('return `' + template + '`;').call(vars)
-			})(compilerInstance.exec_command, { file: fileBasename }).split(' ').map(el => el.replace(/_/g, ' ')),
-			// file name could be required to be first argument or appear more than once in compiler commands of some weird languages :D
-			AttachStdout: false,
-			AttachStderr: false,
-			tty: false
-		})
-
-		await container.fs.put(`${filePureBasename}.tar`, { path: '.' })
-			.then(stream => promisifyStream(stream))
-		await unlinkAsync(`${filePureBasename}.tar`)
-		await container.start()
-		await container.logs({
-			follow: true,
-			stdout: true,
-			stderr: true
-		}).then(stream => new Promise((resolve, reject) => {
-			stream.on('data', (d) => logs.push(d.toString()))
-			stream.on('end', resolve)
-			stream.on('error', reject)
-		}))
-		await container.wait()
-
-		await container.fs.get({ path: compilerInstance.output_name })
-			.then(stream => {
-				const file = fs.createWriteStream(outfile)
-				stream.pipe(file)
-				return promisifyStreamNoSpam(stream)
+			const container = await docker.container.create({
+				Image: compilerInstance.image_name,
+				// compilerInstance.exec_command can be template string, it splits with ' '
+				// '_' is a non-splitting space
+				// Example of exec_command 
+				// "gcc -lstdc++ -std=c++17 -O2 -o a.out ${this.file}"
+				// or
+				// "gcc -lstdc++ -std=c++17 -O2 -o ${this.file+'.out'} ${this.file}"
+				// (but outputs are never exctracted from tar so they could have the same name)
+				Cmd: ((template, vars) => {
+					return new Function('return `' + template + '`;').call(vars)
+				})(compilerInstance.exec_command, { file: fileBasename }).split(' ').map(el => el.replace(/_/g, ' ')),
+				// file name could be required to be first argument or appear more than once in compiler commands of some weird languages :D
+				AttachStdout: false,
+				AttachStderr: false,
+				tty: false
 			})
-		await container.delete({ force: true })
-		return outfile
-	} catch (err) {
-		if (typeof container !== 'undefined') await container.delete({ force: true })
-		if (logs.length) throw logs.join()
-		throw err
-	}
+
+			await container.fs.put(tarfile, { path: '.' })
+				.then(stream => promisifyStream(stream))
+			await unlinkAsync(tarfile)
+			await container.start()
+			await container.logs({
+				follow: true,
+				stdout: true,
+				stderr: true
+			}).then(stream => new Promise((resolve, reject) => {
+				stream.on('data', (d) => logs.push(d.toString()))
+				stream.on('end', resolve)
+				stream.on('error', reject)
+			}))
+			await container.wait()
+
+			await container.fs.get({ path: compilerInstance.output_name })
+				.then(stream => {
+					const file = fs.createWriteStream(outfile)
+					stream.pipe(file)
+					return promisifyStreamNoSpam(stream)
+				})
+			await container.delete({ force: true })
+			resolve( outfile);
+		} catch (err) {
+			if (typeof container !== 'undefined') await container.delete({ force: true })
+			if (logs.length) reject([0, logs.join()])
+			else reject([0, err ])
+		}
+	})
 }
 
 /** Executes a program inside docker container
  * 
  * @param {string} exname Name of Execution Environment
- * @param {string} infile Path to input file, expects *.tar file 
- * @param {*} stdinfile Path to the file to be piped as stdin. (Defunct for now. Use other means e.g. /bin/bash -c "/a.out < input.txt" in ExecEnv def)
- * @returns {string} Array containing output from running command. 0 is stdout, 1 is stderr
+ * @param {string} infile Path to input file, expects a file. Can be referenced by ${this.file}
+ * @param {string} stdinfile Path to the file to be sent to the container, containing input data. You need to pipe its contents 'manually' e.g. by executing command inside container. Can be referenced by ${this.input}
+ * @returns {string} Array containing output from running command. 0 is stdout, 1 is stderr. On fail throws pair int, string. If int is greater than zero, problem is bad execenv configuration or server error. If it's 0, problem is with the executed program (it page-faults or exceeds time limits)
  */
 function exec(exname, infile, stdinfile) {
 	return new Promise(async (resolve, reject) => {
 		const _execInstance = await execenv.ExecEnv.findOne({ name: exname });
 
 		if (!_execInstance) {
-			reject("Invalid ExecEnv");
+			reject([1,"Invalid ExecEnv"]);
 			return;
 		}
 
 		try {
-			const infilename = infile.replace(pathToFile, '')
+			
+			const fileBasename = path.basename(infile);
+			const filePureBasename = path.basename(infile, path.extname(infile));
+			const fileDirname = path.dirname(infile);
+			const tarfile = `${fileDirname}/${crypto.randomBytes(10).toString('hex')}.tar`;
+
+			const infilename = fileBasename;//infile.replace(pathToFile, '')
+
+			var stdininfilename = '';
+			if(stdininfilename)stdininfilename = path.basename(stdinfile);
+
+			console.log(`Let's execute! ${fileBasename}`);
 
 			var _container = await docker.container.create({
 				Image: _execInstance.image_name,
@@ -189,7 +213,7 @@ function exec(exname, infile, stdinfile) {
 				// "bash -c chmod_+x_${this.file}_;_./${this.file}"
 				Cmd: ((template, vars) => {
 					return new Function('return `' + template + '`;').call(vars)
-				})(_execInstance.exec_command, { file: infilename }).split(' ').map(el => el.replace(/_/g, ' ')),
+				})(_execInstance.exec_command, { file: infilename, input: stdininfilename }).split(' ').map(el => el.replace(/_/g, ' ')),
 				Memory: _execInstance.memory,
 				AttachStdout: false,
 				AttachStderr: false,
@@ -198,19 +222,30 @@ function exec(exname, infile, stdinfile) {
 				OpenStdin: false,
 				//interactive: (stdinfile ? true : false),
 			})
-			//await tar.c({ file: infile.replace(fileExtension, '.tar'), C: infile.match(pathToFile)[0] }, [infile.replace(pathToFile, '')])
-			//Jeszcze nie, muszę ogarnąć podłączanie stdin. Jeśli się nie uda może się okazać że będziemy przesyłać w archiwum parę: exec i dane.
-			var _unpromStream = await _container.fs.put(infile.replace(fileExtension, '.tar'), { path: '.' })
-			await promisifyStreamNoSpam(_unpromStream);
-			await _container.start();
+			await tar.c({ 
+				file: tarfile,
+				cwd: fileDirname
+			}, [fileBasename])
+			
 
 			if (stdinfile) {
-				console.log("Redirecting input.");
+				/*console.log("Redirecting input.");
 				var [_stdinstream,] = await _container.attach({ stream: true, stderr: true });
 				var _fstrm = fs.createReadStream(stdinfile);
 				_fstrm.pipe(_stdinstream) //readable->writable
-				await promisifyStream(_fstrm);
+				await promisifyStream(_fstrm);*/
+				await tar.r({ 
+					file: tarfile,
+					cwd: fileDirname
+				}, [stdininfilename])
 			}
+
+			var _unpromStream = await _container.fs.put(tarfile, { path: '.' })
+			await promisifyStreamNoSpam(_unpromStream);
+			
+			await unlinkAsync(tarfile);
+
+			await _container.start();
 
 			//await _container.wait();
 
@@ -221,7 +256,7 @@ function exec(exname, infile, stdinfile) {
 			if (inspection.data.State.Status !== 'exited') {
 				await _container.kill();
 				await _container.delete({ force: true });
-				reject("Time Limit Exceeded");
+				reject([0,"Time Limit Exceeded"]);
 				return;
 			}
 			//else await _container.stop();
@@ -262,7 +297,7 @@ function exec(exname, infile, stdinfile) {
 			if (typeof _container !== 'undefined') {
 				_container.delete({ force: true }).catch((e) => console.log("Failed to clean up after exec error, it is still alive! " + e));
 			}
-			reject("Failed at execution attempt: " + err);
+			reject([1,"Failed at execution attempt: " + err]);
 			return;
 		}
 
