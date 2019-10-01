@@ -78,21 +78,10 @@ function gccDetect() {
 		.catch((error) => console.log(error))
 
 }
-/*
-Parameters:
-comp - compiler name (compilers.js)
-file - path to input file, with filename.
-[OPTIONAL] outfile - path where to put compiled file (with the new file name). Can be omitted to get the file in the working directory. The file is inside a TAR archive.
-Return value:
-Promise and path. If rejected it will be .docker.log file. If resolved it will be the compiled file.
- 
-Domyślnie wypluwa plik z rozszerzeniem .tar, bo jest to archiwum tar.
-Od teraz daje inny plik o tej samej nazwie z rozszerzeniem .docker.log, który zawiera logi dockera, czyli w tym przebieg kompilacji, i błędy w jej trakcie.
-*/
 /** Compiles inside a container
  * 
  * @param {string} comp Compiler name. Can be referenced by ${this.file}
- * @param {string} file Complete path to input file.
+ * @param {string} file Complete path to the input file.
  * @param {string} _outfile Output file path. Optional. If not specified outputs with the same name, but with .tar extension.
  * @returns {string} Path to extracted tar archive. On fail throws pair int, string. If int is greater than zero, problem is bad compiler configuration or server error. If it's 0, problem is with the executed program (normal CE)
  */
@@ -111,8 +100,10 @@ async function compile(comp, file, _outfile) {
 
 			const compilerInstance = await compiler.Compiler.findOne({ name: comp });
 
-			if (!compilerInstance)
+			if (!compilerInstance){
 				reject ([1,'Invalid compiler name']);
+				return;
+			}
 
 			if (compilerInstance.shadow === true){
 				resolve(file);
@@ -124,7 +115,7 @@ async function compile(comp, file, _outfile) {
 				cwd: fileDirname
 			}, [fileBasename])
 
-			const container = await docker.container.create({
+			var container = await docker.container.create({
 				Image: compilerInstance.image_name,
 				// compilerInstance.exec_command can be template string, it splits with ' '
 				// '_' is a non-splitting space
@@ -199,7 +190,7 @@ function exec(exname, infile, stdinfile) {
 			const infilename = fileBasename;//infile.replace(pathToFile, '')
 
 			var stdininfilename = '';
-			if(stdininfilename)stdininfilename = path.basename(stdinfile);
+			if(stdinfile)stdininfilename = path.basename(stdinfile);
 
 			console.log(`Let's execute! ${fileBasename}`);
 
