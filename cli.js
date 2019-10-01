@@ -5,6 +5,7 @@ const compilers = require('./compilers.js')
 const execnv = require('./execenv.js')
 const langs = require('./langs.js')
 const problems = require('./problems.js')
+const tests = require('./tests.js')
 const program = require('commander')
 const fs = require('fs')
 const { promisify } = require('util')
@@ -111,6 +112,18 @@ program.command('remProblem <name>')
     .description('Removes a problem.')
     .action((name) => {
         problems.remProblem(name).then(() => process.exit(0))
+    })
+
+//-----------------
+program.command('insertTest <problem> <pathToFile>')
+    .alias('atst')
+    .description('Inserts a test')
+    .action(async (problem, file)=>{
+        var stream = fs.createReadStream(file);
+        await tests.insertTest(problem, stream).then(_=> {
+            console.log("OK");
+        },err=>{console.log(err)} )
+        process.exit(0)
     })
 //-----------------
 program.command('nukeDockerContainers')
