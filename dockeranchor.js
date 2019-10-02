@@ -171,7 +171,7 @@ async function compile(comp, file, _outfile) {
  * @param {string} stdinfile Path to the file to be sent to the container, containing input data. You need to pipe its contents 'manually' e.g. by executing command inside container. Can be referenced by ${this.input}
  * @returns {string} Array containing output from running command. 0 is stdout, 1 is stderr. On fail throws pair int, string. If int is greater than zero, problem is bad execenv configuration or server error. If it's 0, problem is with the executed program (it page-faults or exceeds time limits)
  */
-function exec(exname, infile, stdinfile) {
+async function exec(exname, infile, stdinfile) {
 	return new Promise(async (resolve, reject) => {
 		const _execInstance = await execenv.ExecEnv.findOne({ name: exname });
 
