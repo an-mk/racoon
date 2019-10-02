@@ -11,7 +11,7 @@ async function insertTest(problem, fileStream) {
     })
 
     const test = await Test.create({ problem: problem, file: file._id })
-    await Problem.findOneAndUpdate({ name: problem }, { '$push': { 'tests': test._id } })
+    await Problem.findOneAndUpdate({ name: problem }, { '$push': { 'tests': file._id } })
     console.log('test for problem', problem, 'saved')
 }
 
