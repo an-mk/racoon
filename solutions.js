@@ -41,7 +41,10 @@ async function judge(solution) {
     const dirPath = tmpDir + '/' + crypto.randomBytes(8).toString('hex')
 
     const lang = await Lang.findOne({ name: solution.lang });
+        if(!lang) console.error(`Lang ${solution.lang} not found.`)
     const problem = await Problem.findOne({ name: solution.problem });
+        if(!lang) console.error(`Problem ${solution.problem} not found.`)
+
 
     await mkdirAsync(dirPath).catch(async (err) => {
         console.log('judge cant create dir ', err);

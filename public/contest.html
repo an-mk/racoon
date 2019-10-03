@@ -73,7 +73,7 @@
             <div class="mdc-form-field" data-mdc-auto-init="MDCFormField">
                     <div class="mdc-radio" data-mdc-auto-init="MDCRadio" ng-repeat-start="language in languages track by $index">
                         <input class="mdc-radio__native-control" type="radio" id="radio-{{$index}}" name="radios"
-                            ng-click="updateMonaco(language)" ng-checked="$first">
+                            ng-click="updateMonaco(language)" ng-checked="$first" ng-model="currentLanguage.name" ng-value="language.name">
                         <div class="mdc-radio__background">
                             <div class="mdc-radio__outer-circle"></div>
                             <div class="mdc-radio__inner-circle"></div>

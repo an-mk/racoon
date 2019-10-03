@@ -34,7 +34,7 @@ angular.module('app').controller('contestController', function ($scope, $async, 
     }
 
     $scope.submit = () => {
-        userService.submit($scope.currentProblem.name, editor.getValue(), editor.getModel().getModeId()).then(() => {
+        userService.submit($scope.currentProblem.name, editor.getValue(), $scope.currentLanguage.name /*editor.getModel().getModeId()*/).then(() => {
             $scope.refresh()
             notificationService.show('Wysłano rozwiązanie')
         }).catch((err) => {
@@ -44,6 +44,7 @@ angular.module('app').controller('contestController', function ($scope, $async, 
     }
 
     $scope.languages = []
+    $scope.currentLanguage = { name: '' }
 
     $scope.updateMonaco = (language) => {
         monaco.editor.setModelLanguage(editor.getModel(), language.monacoName)
@@ -53,6 +54,7 @@ angular.module('app').controller('contestController', function ($scope, $async, 
 
     $async(function* () {
         $scope.languages = yield miscService.getLanguages()
+        $scope.currentLanguage.name = $scope.languages[0].name
         yield window.monacoLoaded
         editorContainer = document.getElementById('container')
         editor = monaco.editor.create(editorContainer, {
