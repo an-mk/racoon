@@ -49,6 +49,17 @@ function splitCommands(str) {
 	);
 }
 
+async function pingDocker()
+{
+	try{
+		const info = await docker.info();
+		return[true, info];
+	}catch(err)
+	{
+		return [false, err];
+	}
+}
+
 function gccDetect() {
 
 	docker.container.create({
@@ -97,6 +108,11 @@ async function compile(comp, file, _outfile) {
 			const tarfile = `${fileDirname}/${crypto.randomBytes(10).toString('hex')}.tar`;
 
 			console.log(`Let's compile! ${fileBasename}`);
+
+			if((await pingDocker())[0] == false){
+				reject([1, "Cannot reach docker machine."]);
+				return;
+			}
 
 			const compilerInstance = await compiler.Compiler.findOne({ name: comp });
 
@@ -193,6 +209,11 @@ async function exec(exname, infile, stdinfile) {
 			if(stdinfile)stdininfilename = path.basename(stdinfile);
 
 			console.log(`Let's execute! ${fileBasename}`);
+
+			if((await pingDocker())[0] == false){
+				reject([1, "Cannot reach docker machine."]);
+				return;
+			}
 
 			var _container = await docker.container.create({
 				Image: _execInstance.image_name,
@@ -306,7 +327,7 @@ async function exec(exname, infile, stdinfile) {
 async function execEx(exname, infile, stdinfile, optz) {
 	return new Promise(async (resolve, reject) => {
 		const _execInstance = await execenv.ExecEnv.findOne({ name: exname });
-		const opts = optz || '';
+		const opts = optz || {};
 
 		if (!_execInstance) {
 			reject([1,"Invalid ExecEnv"]);
