@@ -83,7 +83,7 @@ async function judge(solution) {
 
                     await File.toFile(testFile, `${dirPath}/${testFile}`);
         
-                    var result = await dockeranchor.exec(lang.execenv, `${dirPath}/${compiledFile}`,  `${dirPath}/${testFile}`);
+                    var result = await dockeranchor.execEx(lang.execenv, `${dirPath}/${compiledFile}`,  `${dirPath}/${testFile}`, {memLimit: problem.memLimit, timeLimit: problem.timeLimit});
                     //still random
                     
                     console.log(result);

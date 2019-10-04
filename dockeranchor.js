@@ -295,6 +295,161 @@ async function exec(exname, infile, stdinfile) {
 	})
 }
 
+/** Executes a program inside docker container, but better
+ * 
+ * @param {string} exname Name of Execution Environment
+ * @param {string} infile Path to input file, expects a file. Can be referenced by ${this.file}
+ * @param {string} stdinfile Path to the file to be sent to the container, containing input data. You need to pipe its contents 'manually' e.g. by executing command inside container. Can be referenced by ${this.input}
+ * @param {Object} opts Options. memLimit - memory limit. timeLimit - time limit. env - array of environmental variables to pass.
+ * @returns {string} Tuple with paths to files containing demultiplexed output. 0 is stdout, 1 is stderr. On fail throws pair int, string. If int is greater than zero, problem is bad execenv configuration or server error. If it's 0, problem is with the executed program (it page-faults or exceeds time limits)
+ */
+async function execEx(exname, infile, stdinfile, optz) {
+	return new Promise(async (resolve, reject) => {
+		const _execInstance = await execenv.ExecEnv.findOne({ name: exname });
+		const opts = optz || '';
+
+		if (!_execInstance) {
+			reject([1,"Invalid ExecEnv"]);
+			return;
+		}
+
+		try {
+			
+			const fileBasename = path.basename(infile);
+			const filePureBasename = path.basename(infile, path.extname(infile));
+			const fileDirname = path.dirname(infile);
+			const tarfile = `${fileDirname}/${crypto.randomBytes(10).toString('hex')}.tar`;
+
+			const infilename = fileBasename;//infile.replace(pathToFile, '')
+
+			var stdininfilename = '';
+			if(stdinfile)stdininfilename = path.basename(stdinfile);
+
+			const timeLimit = Math.min(_execInstance.time, isNaN(opts.timeLimit) ? Infinity : opts.timeLimit);
+			const memLimit = Math.min(_execInstance.memLimit, isNaN(opts.memLimit) ? Infinity: opts.memLimit);
+
+			console.log(`Let's execute! ${fileBasename}`);
+
+			var _container = await docker.container.create({
+				Image: _execInstance.image_name,
+				// _execInstance.exec_command can be template string, it splits with '_'
+				// Example of exec_command:
+				// "bash -c chmod_+x_a.out_;_./a.out" 
+				// (results in ['bash', '-c', 'chmod +x a.out ; ./a.out'])
+				// or
+				// "bash -c chmod_+x_${this.file}_;_./${this.file}"
+				Cmd: ((template, vars) => {
+					return new Function('return `' + template + '`;').call(vars)
+				})(_execInstance.exec_command, { file: infilename, input: stdininfilename }).split(' ').map(el => el.replace(/_/g, ' ')),
+				Memory: memLimit,
+				AttachStdout: false,
+				AttachStderr: false,
+				AttachStdin: false,
+				tty: false,
+				OpenStdin: false,
+				//interactive: (stdinfile ? true : false),
+			})
+			await tar.c({ 
+				file: tarfile,
+				cwd: fileDirname
+			}, [fileBasename])
+			
+
+			if (stdinfile) {
+				/*console.log("Redirecting input.");
+				var [_stdinstream,] = await _container.attach({ stream: true, stderr: true });
+				var _fstrm = fs.createReadStream(stdinfile);
+				_fstrm.pipe(_stdinstream) //readable->writable
+				await promisifyStream(_fstrm);*/
+				await tar.r({ 
+					file: tarfile,
+					cwd: fileDirname
+				}, [stdininfilename])
+			}
+
+			var _unpromStream = await _container.fs.put(tarfile, { path: '.' })
+			await promisifyStreamNoSpam(_unpromStream);
+			
+			await unlinkAsync(tarfile);
+
+			await _container.start();
+			await asyncWait(timeLimit);
+			await _container.kill()
+			.catch(_=>{});
+
+			const inspection = await _container.status();
+			const execTime = new Date(inspection.data.State.FinishedAt) - new Date(inspection.data.State.StartedAt);
+
+			console.log(`Calculated uptime of ${execTime} `);
+
+			if (execTime >= timeLimit) {
+
+				await _container.delete({ force: true });
+				reject([0,"Time Limit Exceeded"]);
+				return;
+			}
+
+			console.log(`Container in state: ${inspection.data.State.Status} and health: ${inspection.data.State.Error}`);
+
+			console.log(inspection.data.State.Error);
+			//console.log(inspection.data.State.ExitCode);
+			if (inspection.data.State.Error !== "") {
+
+				await _container.delete({ force: true });
+				reject([0,"Runtime Error", inspection.data.State.Error]);
+				return;
+			}
+
+			if (inspection.data.State.ExitCode !== 0) {
+
+				await _container.delete({ force: true });
+				reject([0,"Runtime Error", inspection.data.State.ExitCode]);
+				return;
+			}
+
+			_unpromStream = await _container.logs({
+				follow: true,
+				stdout: true,
+				stderr: true
+			})
+
+			const logs = new Array('','','')
+
+			await new Promise((resolve, reject) => {
+				_unpromStream.on('data', (d) => {
+					switch(d.toString().charCodeAt(0)){
+						case 1: //stdout+(prawie zawsze)stdin
+							logs[0] = logs[0].concat(d.toString().substr(8, d.toString().length)); //https://docs.docker.com/engine/api/v1.40/#operation/ContainerAttach;
+							break;
+						case 2: //stderr
+							logs[1] = logs[1].concat(d.toString().substr(8, d.toString().length));
+							break;
+						default: //stdin (sam)
+							logs[2] = logs[2].concat(d.toString().substr(8, d.toString().length));
+							break;
+					}
+				})
+				_unpromStream.on('end', resolve)
+				_unpromStream.on('error', reject)
+			})
+
+			await _container.delete({ force: true });
+
+			//resolve(logs.join().replace(/[^\x20-\x7E]/g, '').trim())
+			resolve(logs);
+			return;
+
+		} catch (err) {
+			if (typeof _container !== 'undefined') {
+				_container.delete({ force: true }).catch((e) => console.log("Failed to clean up after exec error, it is still alive! " + e));
+			}
+			reject([1,"Failed at execution attempt: " + err]);
+			return;
+		}
+
+	})
+}
+
 
 async function nukeContainers(quit) {
 	const shouldQuit = quit !== false;
@@ -315,4 +470,4 @@ async function nukeContainers(quit) {
 	})
 }
 
-module.exports = { gccDetect, compile, exec, nukeContainers }
+module.exports = { gccDetect, compile, exec, execEx, nukeContainers }
