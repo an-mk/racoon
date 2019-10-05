@@ -4,7 +4,7 @@ const Solution = require('../../models/Solution')
 
 describe('User actions', function () {
     it('Create account', async function () {
-        this.timeout(6000)
+        this.timeout(12000)
         const username = 'Abc xyz ' + Math.random().toString().substring(2)
         const password = '12345678' + Math.random().toString().substring(2)
 
@@ -19,7 +19,7 @@ describe('User actions', function () {
         expect(await element(by.css('section[ng-if="!currentUser"] > span')).getText()).to.equals('Racoon')
     })
     it('Login and logout', async function () {
-        this.timeout(6000)
+        this.timeout(12000)
         const username = 'Abc xyz ' + Math.random().toString().substring(2)
         const password = '12345678' + Math.random().toString().substring(2)
 
@@ -41,7 +41,7 @@ describe('User actions', function () {
         expect(await element(by.css('section[ng-if="!currentUser"] > span')).getText()).to.equals('Racoon')
     })
     it('Post solution', async function () {
-        this.timeout(6000)
+        this.timeout(12000)
         const username = 'Abc xyz ' + Math.random().toString().substring(2)
         const password = '12345678' + Math.random().toString().substring(2)
         const code = 'float xyz = ' + Math.random().toString().substring(2)
@@ -60,7 +60,7 @@ describe('User actions', function () {
     })
     it('Ranking', async function () {
         // TOO SLOW :'C
-        this.timeout(20000)
+        this.timeout(40000)
         const username = 'Abc xyz ' + Math.random().toString().substring(2)
         const password = '12345678' + Math.random().toString().substring(2)
         const code = 'int xyz = ' + Math.random().toString().substring(2)
@@ -76,9 +76,9 @@ describe('User actions', function () {
         element(by.css('button[ng-click="submit()"]')).click()
         element(by.css('a[href="/ranking"]')).click()
         //Time for checking solution
-        await new Promise(r => setTimeout(r, 16000))
+        await new Promise(r => setTimeout(r, 20000))
         browser.refresh()
-        await new Promise(r => setTimeout(r, 2000))
+        await new Promise(r => setTimeout(r, 4000))
         expect(await element(by.css('tr > td')).getText()).to.equals(username)
     })
     afterEach(async function () {

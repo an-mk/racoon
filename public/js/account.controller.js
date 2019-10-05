@@ -1,5 +1,11 @@
 angular.module('app').controller('accountController', function ($scope, userService, notificationService) {
     window.mdc.autoInit()
+
+    userService.amIAdmin().then(res => {
+        $scope.admin = res
+        $scope.$apply()
+    })
+    
     $scope.login = (name, pswd) => {
         userService.login(name, pswd).then(res => $scope.$emit('login', res))
             .catch(err => {

@@ -5,6 +5,69 @@
             <span class="mdc-typography--headline4">Panel administracyjny</span>
         </div>
 
+
+        <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12 card">
+            <div class="mdc-typography--headline5" style="text-align: center;">Dodaj zadanie</div>
+
+            <div class="mdc-text-field mdc-text-field--outlined" data-mdc-auto-init="MDCTextField">
+                <input type="text" id="nameA" class="mdc-text-field__input" ng-model="nameA">
+                <div class="mdc-notched-outline">
+                    <div class="mdc-notched-outline__leading"></div>
+                    <div class="mdc-notched-outline__notch">
+                        <label for="nameA" class="mdc-floating-label">Nazwa zadania</label>
+                    </div>
+                    <div class="mdc-notched-outline__trailing"></div>
+                </div>
+            </div>
+
+
+            <div class="mdc-text-field mdc-text-field--textarea mdc-text-field--fullwidth"
+                data-mdc-auto-init="MDCTextField">
+                <textarea class="mdc-text-field__input" rows="1" cols="1"
+                    oninput="this.style.height='';this.style.height = this.scrollHeight + 'px'" onchange="this.focus();"
+                    ng-model="content"></textarea>
+                <div class="mdc-notched-outline">
+                    <div class="mdc-notched-outline__leading"></div>
+                    <div class="mdc-notched-outline__notch">
+                        <label for="textarea" class="mdc-floating-label">Treść zadania (jako html)</label>
+                    </div>
+                    <div class="mdc-notched-outline__trailing"></div>
+                </div>
+            </div>
+
+            <span class="end">
+                <button ng-click="addProblem()" class="mdc-button mdc-button--raised" data-mdc-auto-init="MDCRipple">
+                    <span class="mdc-button__label">Dodaj </span>
+                </button>
+            </span>
+        </div>
+
+        <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12 card">
+            <div class="mdc-typography--headline5" style="text-align: center;">Dodaj test do zadania</div>
+
+            <div class="mdc-text-field mdc-text-field--outlined" data-mdc-auto-init="MDCTextField">
+                <input type="text" id="nameB" class="mdc-text-field__input" ng-model="nameB">
+                <div class="mdc-notched-outline">
+                    <div class="mdc-notched-outline__leading"></div>
+                    <div class="mdc-notched-outline__notch">
+                        <label for="nameB" class="mdc-floating-label">Nazwa zadania</label>
+                    </div>
+                    <div class="mdc-notched-outline__trailing"></div>
+                </div>
+            </div>
+
+            <span class="end">
+                <input id="file" style="display: none;" type="file">
+                <label for="file" class="mdc-button" data-mdc-auto-init="MDCRipple">
+                    <span class="mdc-button__label">Wybierz plik</span>
+                </label>
+
+                <button ng-click="addTest()" class="mdc-button mdc-button--raised" data-mdc-auto-init="MDCRipple">
+                    <span class="mdc-button__label">Dodaj </span>
+                </button>
+            </span>
+        </div>
+
         <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12 card">
             <div class="mdc-typography--headline5" style="text-align: center;">Wszystkie zgłoszenia</div>
             <div class="mdc-text-field mdc-text-field--outlined" data-mdc-auto-init="MDCTextField">
