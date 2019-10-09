@@ -61,8 +61,9 @@ RACOONDOCKERPORT | `2375` | Docker Machine exposed API port
 RACOONMONGOPSW | - | Password for MongoDB database
 RACOONMONGOHOST | - | MongoDB hostname.
 RACOONMONGOUNAME | - | MongoDB username.
-RACOONMONGOURL | It sets default database name to `sprawdzarka` | Override other Mongo-related parametrs, and pass full URL instead.
+RACOONMONGOURL | It sets default database name to `sprawdzarka` | Override other Mongo-related parameters, and pass full URL instead.
 RACOONMONGODEBUG | - | More verbose Mongoose logs.
+RACOONTMPFILES | `./tmp` | Path to Racoon temp dir.
 
 ## Adding languages
 
