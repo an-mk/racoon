@@ -65,7 +65,7 @@ router.post('/submit', [
     if (!lang)
         return res.status(400).json({ msg: 'Programming Language does not exits' })
 
-    solutions.insertSolution(req.session.name, req.body.problem, req.body.code, req.body.lang).then((x) => {
+    solutions.insertSolution(req.session.name, req.body.problem, req.body.code, lang.name ).then((x) => {
         res.sendStatus(201)
     }).catch((err) => {
         console.log(err)
