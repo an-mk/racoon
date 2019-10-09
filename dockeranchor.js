@@ -321,10 +321,11 @@ async function exec(exname, infile, stdinfile) {
  * @param {string} exname Name of Execution Environment
  * @param {string} infile Path to input file, expects a file. Can be referenced by ${this.file}
  * @param {string} stdinfile Path to the file to be sent to the container, containing input data. You need to pipe its contents 'manually' e.g. by executing command inside container. Can be referenced by ${this.input}
+ * @param {Object} morefiles More files. Format {patternNameToBeReplaced: filePath}.
  * @param {Object} opts Options. memLimit - memory limit. timeLimit - time limit. env - array of environmental variables to pass.
  * @returns {string} Tuple with paths to files containing demultiplexed output. 0 is stdout, 1 is stderr. On fail throws pair int, string. If int is greater than zero, problem is bad execenv configuration or server error. If it's 0, problem is with the executed program (it page-faults or exceeds time limits)
  */
-async function execEx(exname, infile, stdinfile, optz) {
+async function execEx(exname, infile, stdinfile, morefiles, optz) {
 	return new Promise(async (resolve, reject) => {
 		const _execInstance = await execenv.ExecEnv.findOne({ name: exname });
 		const opts = optz || {};
@@ -349,6 +350,8 @@ async function execEx(exname, infile, stdinfile, optz) {
 			const timeLimit = Math.min(_execInstance.time, isNaN(opts.timeLimit) ? Infinity : opts.timeLimit);
 			const memLimit = Math.min(_execInstance.memLimit, isNaN(opts.memLimit) ? Infinity: opts.memLimit);
 
+			const patternObject = Object.assign({ file: infilename, input: stdininfilename }, morefiles);
+
 			console.log(`Let's execute! ${fileBasename}`);
 
 			var _container = await docker.container.create({
@@ -361,7 +364,7 @@ async function execEx(exname, infile, stdinfile, optz) {
 				// "bash -c chmod_+x_${this.file}_;_./${this.file}"
 				Cmd: ((template, vars) => {
 					return new Function('return `' + template + '`;').call(vars)
-				})(_execInstance.exec_command, { file: infilename, input: stdininfilename }).split(' ').map(el => el.replace(/_/g, ' ')),
+				})(_execInstance.exec_command, patternObject).split(' ').map(el => el.replace(/_/g, ' ')),
 				Memory: memLimit,
 				AttachStdout: false,
 				AttachStderr: false,
@@ -377,15 +380,18 @@ async function execEx(exname, infile, stdinfile, optz) {
 			
 
 			if (stdinfile) {
-				/*console.log("Redirecting input.");
-				var [_stdinstream,] = await _container.attach({ stream: true, stderr: true });
-				var _fstrm = fs.createReadStream(stdinfile);
-				_fstrm.pipe(_stdinstream) //readable->writable
-				await promisifyStream(_fstrm);*/
 				await tar.r({ 
 					file: tarfile,
 					cwd: fileDirname
 				}, [stdininfilename])
+			}
+			if(morefiles){
+				for( let key in morefiles){
+					await tar.r({ 
+						file: tarfile,
+						cwd: path.dirname(morefiles[key])
+					}, [path.basename(morefiles[key])])
+				}
 			}
 
 			var _unpromStream = await _container.fs.put(tarfile, { path: '.' })
@@ -434,24 +440,34 @@ async function execEx(exname, infile, stdinfile, optz) {
 				stderr: true
 			})
 
-			const logs = new Array('','','')
+			var logs = [... new Array(3)].map(()=>{
+				return  `${fileDirname}/${crypto.randomBytes(10).toString('hex')}`;
+			})
+
+			var streams = [... new Array(3)].map((_, num)=>{
+				return fs.createWriteStream(logs[num], {flags: 'a'});
+			})
 
 			await new Promise((resolve, reject) => {
 				_unpromStream.on('data', (d) => {
 					switch(d.toString().charCodeAt(0)){
-						case 1: //stdout+(prawie zawsze)stdin
-							logs[0] = logs[0].concat(d.toString().substr(8, d.toString().length)); //https://docs.docker.com/engine/api/v1.40/#operation/ContainerAttach;
+						case 1: //stdout
+							streams[0].write(d.toString().substr(8, d.toString().length)); //https://docs.docker.com/engine/api/v1.40/#operation/ContainerAttach;
 							break;
 						case 2: //stderr
-							logs[1] = logs[1].concat(d.toString().substr(8, d.toString().length));
+							streams[1].write(d.toString().substr(8, d.toString().length));
 							break;
 						default: //stdin (sam)
-							logs[2] = logs[2].concat(d.toString().substr(8, d.toString().length));
+							streams[2].write(d.toString().substr(8, d.toString().length));
 							break;
 					}
 				})
 				_unpromStream.on('end', resolve)
 				_unpromStream.on('error', reject)
+			})
+
+			streams.forEach((s)=>{
+				s.end();
 			})
 
 			await _container.delete({ force: true });
@@ -491,4 +507,4 @@ async function nukeContainers(quit) {
 	})
 }
 
-module.exports = { gccDetect, compile, exec, execEx, nukeContainers }
+module.exports = { gccDetect, compile, exec, execEx, nukeContainers, pingDocker }
