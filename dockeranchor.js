@@ -98,7 +98,7 @@ function gccDetect() {
  */
 async function compile(comp, file, _outfile) {
 	return new Promise(async (resolve, reject) => {
-		const logs = new Array()
+		var logs = '';
 		try {
 
 			const fileBasename = path.basename(file)
@@ -153,16 +153,20 @@ async function compile(comp, file, _outfile) {
 				.then(stream => promisifyStream(stream))
 			await unlinkAsync(tarfile)
 			await container.start()
-			await container.logs({
+			var _unpromStream = await container.logs({
 				follow: true,
 				stdout: true,
 				stderr: true
-			}).then(stream => new Promise((resolve, reject) => {
-				stream.on('data', (d) => logs.push(d.toString()))
-				stream.on('end', resolve)
-				stream.on('error', reject)
-			}))
-			await container.wait()
+			})
+
+			await new Promise((resolve, reject) => {
+				_unpromStream.on('data', (d) => {
+							logs = logs.concat(d.toString().substr(8, d.toString().length));
+					})
+				_unpromStream.on('end', resolve)
+				_unpromStream.on('error', reject)
+			});
+			await container.wait();
 
 			await container.fs.get({ path: compilerInstance.output_name })
 				.then(stream => {
@@ -174,8 +178,8 @@ async function compile(comp, file, _outfile) {
 			resolve( outfile);
 		} catch (err) {
 			if (typeof container !== 'undefined') await container.delete({ force: true })
-			if (logs.length) reject([0, logs.join()])
-			else reject([0, err ])
+			if (logs.length) reject([0, logs])
+			else reject([1, err ])
 		}
 	})
 }
@@ -342,7 +346,7 @@ async function execEx(exname, infile, stdinfile, morefiles, optz) {
 			const fileDirname = path.dirname(infile);
 			const tarfile = `${fileDirname}/${crypto.randomBytes(10).toString('hex')}.tar`;
 
-			const infilename = fileBasename;//infile.replace(pathToFile, '')
+			const infilename = fileBasename;
 
 			var stdininfilename = '';
 			if(stdinfile)stdininfilename = path.basename(stdinfile);
@@ -418,8 +422,6 @@ async function execEx(exname, infile, stdinfile, morefiles, optz) {
 
 			console.log(`Container in state: ${inspection.data.State.Status} and health: ${inspection.data.State.Error}`);
 
-			console.log(inspection.data.State.Error);
-			//console.log(inspection.data.State.ExitCode);
 			if (inspection.data.State.Error !== "") {
 
 				await _container.delete({ force: true });
@@ -472,7 +474,6 @@ async function execEx(exname, infile, stdinfile, morefiles, optz) {
 
 			await _container.delete({ force: true });
 
-			//resolve(logs.join().replace(/[^\x20-\x7E]/g, '').trim())
 			resolve(logs);
 			return;
 
