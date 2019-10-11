@@ -7,12 +7,13 @@ const tar = require('tar')
 const path = require('path')
 const { promisify } = require('util')
 const unlinkAsync = promisify(fs.unlink)
+const renameAsync = promisify(fs.rename)
 const crypto = require('crypto')
 
 
 const dockerProto = process.env.RACOONDOCKERPROTO || 'http'
-const dockerHost = process.env.RACOONDOCKERHOST || '127.0.0.1'
-const dockerPort = process.env.RACOONDOCKERPORT || 2375
+const dockerHost = process.env.RACOONDOCKERHOST || '192.168.99.101'
+const dockerPort = process.env.RACOONDOCKERPORT || 2376
 
 const docker = new Docker({ protocol: dockerProto, host: dockerHost, port: dockerPort })
 
@@ -91,10 +92,10 @@ function gccDetect() {
 }
 /** Compiles inside a container
  * 
- * @param {string} comp Compiler name. Can be referenced by ${this.file}
- * @param {string} file Complete path to the input file.
+ * @param {string} comp Compiler name.
+ * @param {string} file Complete path to the input file. Can be referenced by ${this.file}
  * @param {string} _outfile Output file path. Optional. If not specified outputs with the same name, but with .tar extension.
- * @returns {string} Path to extracted tar archive. On fail throws pair int, string. If int is greater than zero, problem is bad compiler configuration or server error. If it's 0, problem is with the executed program (normal CE)
+ * @returns {string} Path to binary. On fail throws pair int, string. If int is greater than zero, problem is bad compiler configuration or server error. If it's 0, problem is with the executed program (normal CE)
  */
 async function compile(comp, file, _outfile) {
 	return new Promise(async (resolve, reject) => {
@@ -168,14 +169,25 @@ async function compile(comp, file, _outfile) {
 			});
 			await container.wait();
 
+			const outTarPath = outfile + '.tmptar'
+
 			await container.fs.get({ path: compilerInstance.output_name })
 				.then(stream => {
-					const file = fs.createWriteStream(outfile)
+					const file = fs.createWriteStream(outTarPath)
 					stream.pipe(file)
 					return promisifyStreamNoSpam(stream)
 				})
+			
+			var compiledFile;
+            await tar.list({file : outTarPath, onentry: entry => {compiledFile = entry.path}});
+			await tar.extract({ file: outTarPath, C: fileDirname });
+			
+			await renameAsync(fileDirname + '/' + compiledFile, outfile)
+			await unlinkAsync(outTarPath)
+
 			await container.delete({ force: true })
-			resolve( outfile);
+
+			resolve(outfile);
 		} catch (err) {
 			if (typeof container !== 'undefined') await container.delete({ force: true })
 			if (logs.length) reject([0, logs])
@@ -354,7 +366,10 @@ async function execEx(exname, infile, stdinfile, morefiles, optz) {
 			const timeLimit = Math.min(_execInstance.time, isNaN(opts.timeLimit) ? Infinity : opts.timeLimit);
 			const memLimit = Math.min(_execInstance.memLimit, isNaN(opts.memLimit) ? Infinity: opts.memLimit);
 
-			const patternObject = Object.assign({ file: infilename, input: stdininfilename }, morefiles);
+			const patternObject = { file: infilename, input: stdininfilename }
+			for (let key in morefiles) {
+				patternObject[key] = path.basename(morefiles[key])
+			}
 
 			console.log(`Let's execute! ${fileBasename}`);
 

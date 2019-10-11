@@ -4,6 +4,7 @@ const dockeranchor = require('./dockeranchor.js')
 const compilers = require('./compilers.js')
 const execnv = require('./execenv.js')
 const langs = require('./langs.js')
+const checkEnvs = require('./checkEnvs.js')
 const problems = require('./problems.js')
 const tests = require('./tests.js')
 const program = require('commander')
@@ -98,13 +99,35 @@ program.command('listLangs')
     .action(() => {
         langs.listLangs().then(() => process.exit(0))
     })
+
+    program.command('addCheckEnv <name> <execEnv> <usesBinary> [compiler]')
+    .alias('achenv')
+    .description('Adds checkEnv.')
+    .action((name, execEnv, usesBinary, compiler) => {
+        checkEnvs.insertCheckEnv(name, execEnv, usesBinary, compiler).then(() => process.exit(0))
+    })
+
+program.command('remCheckEnv <name>')
+    .alias('rchenv')
+    .description('Removes a checkEnv.')
+    .action((a) => {
+        checkEnvs.remCheckEnv(a).then(() => process.exit(0))
+    })
+
+program.command('listCheckEnvs')
+    .alias('chenvs')
+    .description('Lists all checkEnvs.')
+    .action(() => {
+        checkEnvs.listCheckEnv().then(() => process.exit(0))
+    })
 //-----------------
-program.command('addProblem <name> <content>')
+program.command('addProblem <name> <content> <checkEnv> [checkerCode]')
     .alias('aprb')
-    .description('Adds a problem.')
-    .action((name, content) => {
+    .description('Adds a problem. Checker code is required for checkEnvs using them')
+    .action((name, content, checkEnv, checkerCode) => {
         content = content.replace(/\\t/g, '\t').replace(/\\n/g, '\n').replace(/\\r/g, '')
-        problems.insertProblem(name, content).then(() => process.exit(0))
+        var stream = fs.createReadStream(checkerCode);
+        problems.insertProblem(name, content, checkEnv, stream).then(() => process.exit(0))
     })
 
 program.command('remProblem <name>')
@@ -115,12 +138,13 @@ program.command('remProblem <name>')
     })
 
 //-----------------
-program.command('insertTest <problem> <pathToFile>')
+program.command('insertTest <problem> <pathToFile> <pathToOutFile>')
     .alias('atst')
     .description('Inserts a test')
-    .action(async (problem, file)=>{
+    .action(async (problem, file, outFile)=>{
         var stream = fs.createReadStream(file);
-        await tests.insertTest(problem, stream).then(_=> {
+        var outStream = fs.createReadStream(outFile);
+        await tests.insertTest(problem, stream, outStream).then(_=> {
             console.log("OK");
         },err=>{console.log(err)} )
         process.exit(0)

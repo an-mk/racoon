@@ -10,9 +10,11 @@ const File = require('./models/File')
 const { promisify } = require('util')
 const tar = require('tar')
 const rimraf = promisify(require('rimraf'))
+const CheckEnv = require('./models/CheckEnv.js')
 
 const writeFileAsync = promisify(fs.writeFile)
 const mkdirAsync = promisify(fs.mkdir)
+const readFileAsync = promisify(fs.readFile)
 
 const tmpDir =  process.env.RACOONTMPFILES || './tmp'
 
@@ -56,25 +58,26 @@ async function judge(solution) {
         throw err;
     })
 
-    await (async () => { 
-        return new Promise(async (resolve, reject)=>{
-            try{
-                await dockeranchor.compile(lang.compiler, codePath)
-                var compiledFile;
-                await tar.list({file : dirPath + '/sol.tar', onentry: entry => {compiledFile = entry.path}});
-                await tar.extract({ file: dirPath + '/sol.tar', C: dirPath });
-                resolve(compiledFile);
-            }catch(err){
-                if(err[0] > 0){
-                    console.log("Server error while compiling "+ err[1]);
-                    await solution.updateOne({ result: 'Compile Server Error' });
-                }
-                else await solution.updateOne({ result: 'CE' })
-                reject(err);
-            }
-        }) 
-    })()
-    .then((compiledFile)=>{
+    await dockeranchor.compile(lang.compiler, codePath).catch(async err => {
+        if(err[0] > 0){
+            console.log("Server error while compiling "+ err[1]);
+            await solution.updateOne({ result: 'Compile Server Error' });
+        }
+        else await solution.updateOne({ result: 'CE' })
+        throw err
+    }).then(async (compiledFile) => {
+        console.log(compiledFile)
+
+        var checkPath = dirPath + '/checkbin'
+
+        console.log(problem)
+        const checkEnvInstance = await CheckEnv.findOne({ name: problem.checkEnv })
+        if (checkEnvInstance.usesBinary) {
+            File.toFile(problem.checkBin, checkPath)
+        } else {
+            checkPath = compiledFile
+        }
+
         return new Promise(async (resolve, reject)=>{
             try{
                 const testz = problem.tests;
@@ -85,15 +88,36 @@ async function judge(solution) {
                     const testFile = testObj.file;
 
                     await File.toFile(testFile, `${dirPath}/${testFile}`);
-        
-                    var result = await dockeranchor.execEx(lang.execenv, `${dirPath}/${compiledFile}`,  `${dirPath}/${testFile}`, {} , {memLimit: problem.memLimit, timeLimit: problem.timeLimit});
-                    //still random
-                    
-                    console.log(result);
+                    await File.toFile(testObj.outFile, `${dirPath}/outFile.txt`)
+                
 
-                    //await new Promise(resolve => setTimeout(resolve, 10000))
-                    await solution.updateOne({ result: (Math.random() > 0.7) ? "OK" : "BAD" })
+                    var result = await dockeranchor.execEx(lang.execenv, compiledFile,  `${dirPath}/${testFile}`, {}, 
+                                                                {memLimit: problem.memLimit, timeLimit: problem.timeLimit})
+
+                    await readFileAsync(result[0], 'utf8').then(console.log)
+                    await readFileAsync(`${dirPath}/outFile.txt`, 'utf8').then(console.log)
+                
+                    try {
+                        var result = await dockeranchor.execEx(checkEnvInstance.execEnv, checkPath,  result[0], { good: `${dirPath}/outFile.txt` }, { timeLimit: problem.timeLimit })
+                    } catch (err) {
+                        if (err[0] === 0) {
+                            throw [1, 'Checker error! ' + err[1]]
+                        }
+                        else throw err
+                    }
+
+                    console.log('finished check', result)
+
+                    result = await readFileAsync(result[0], 'utf8')
+                    console.log(result)
+
+                    if (result.substr(0, 2) !== 'OK')
+                        throw [0, 'Wrong anwser']
+
+
                 };
+
+                await solution.updateOne({ result: 'OK' })
 
                 resolve();
             
