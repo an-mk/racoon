@@ -50,6 +50,21 @@ You should get the gcc version printed on the screen.
 ### Linux
 Linux ssie xD
 
+# Configuration
+## Environment variables
+Name | Default | Use
+--- | --- | ---
+RACOONPORT | `3000` | Port on which the app will run.
+RACOONDOCKERPROTO | `http` | Protocol for Docker connection.
+RACOONDOCKERHOST | `127.0.0.1` | Docker Machine Address
+RACOONDOCKERPORT | `2375` | Docker Machine exposed API port
+RACOONMONGOPSW | - | Password for MongoDB database
+RACOONMONGOHOST | - | MongoDB hostname.
+RACOONMONGOUNAME | - | MongoDB username.
+RACOONMONGOURL | It sets default database name to `sprawdzarka` | Override other Mongo-related parameters, and pass full URL instead.
+RACOONMONGODEBUG | - | More verbose Mongoose logs.
+RACOONTMPFILES | `./tmp` | Path to Racoon temp dir.
+
 ## Adding languages
 
 ```

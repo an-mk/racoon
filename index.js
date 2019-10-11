@@ -7,7 +7,7 @@ const session = require('express-session')
 const cryptoRandomString = require('crypto-random-string')
 const fileUpload = require('express-fileupload')
 
-const port = process.env.SPRPORT || process.env.PORT || 3000
+const port = process.env.RACOONPORT || process.env.PORT || 3000
 
 app.use(helmet())
 
