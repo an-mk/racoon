@@ -22,7 +22,7 @@
         "helmet": "^3.21.1",
         "material-components-web": "^3.1.1",
         "mongodb": "^3.3.2",
-        "mongoose": "^5.7.1",
+        "mongoose": "^5.7.5",
         "mongoose-gridfs": "^1.2.7",
         "node-docker-api": "^1.1.22",
         "node-sass": "^4.12.0",
