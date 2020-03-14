@@ -1,6 +1,6 @@
 'use strict';
 
-const Lang = require('./models/Lang');
+const Lang = require('../models/Lang');
 
 const insertLang = async (name, monaco, snippet, compiler, execenv) => {
 	const comp = new Lang({ name: name, monacoName: monaco, codeSnippet: snippet, compiler: compiler, execenv: execenv });

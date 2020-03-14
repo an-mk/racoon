@@ -1,4 +1,4 @@
-const Compiler = require('./models/Compiler')
+const Compiler = require('../models/Compiler')
 
 const insertCompiler = async (name, img, exec, out, _shadow) => {
 	const shadow = _shadow === true;

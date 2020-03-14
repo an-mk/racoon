@@ -1,8 +1,8 @@
 ﻿"use strict";
 const Docker = require('node-docker-api').Docker
 const fs = require('fs');
-const compiler = require('./compilers')
-const execenv = require('./execenv')
+const compiler = require('./models/Compiler')
+const execenv = require('./models/ExecEnv')
 const tar = require('tar')
 const path = require('path')
 const { promisify } = require('util')
@@ -115,7 +115,7 @@ async function compile(comp, file, _outfile) {
 				return;
 			}
 
-			const compilerInstance = await compiler.Compiler.findOne({ name: comp });
+			const compilerInstance = await compiler.findOne({ name: comp });
 
 			if (!compilerInstance){
 				reject ([1,'Invalid compiler name']);
@@ -205,7 +205,7 @@ async function compile(comp, file, _outfile) {
  */
 async function exec(exname, infile, stdinfile) {
 	return new Promise(async (resolve, reject) => {
-		const _execInstance = await execenv.ExecEnv.findOne({ name: exname });
+		const _execInstance = await execenv.findOne({ name: exname });
 
 		if (!_execInstance) {
 			reject([1,"Invalid ExecEnv"]);
@@ -343,7 +343,7 @@ async function exec(exname, infile, stdinfile) {
  */
 async function execEx(exname, infile, stdinfile, morefiles, optz) {
 	return new Promise(async (resolve, reject) => {
-		const _execInstance = await execenv.ExecEnv.findOne({ name: exname });
+		const _execInstance = await execenv.findOne({ name: exname });
 		const opts = optz || {};
 
 		if (!_execInstance) {

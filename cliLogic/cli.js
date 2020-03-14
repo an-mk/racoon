@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 
-const dockeranchor = require('./dockeranchor.js')
+const dockeranchor = require('../dockeranchor.js')
 const compilers = require('./compilers.js')
 const execnv = require('./execenv.js')
 const langs = require('./langs.js')
 const checkEnvs = require('./checkEnvs.js')
-const problems = require('./problems.js')
-const tests = require('./tests.js')
+const problems = require('../problems.js')
+const tests = require('../tests.js')
 const program = require('commander')
 const fs = require('fs')
 const { promisify } = require('util')
 const writeFileAsync = promisify(fs.writeFile)
-program.version(require('./package.json').version);
+program.version(require('../package.json').version);
 
 program.command('addCompiler <compilerName> <imageInDocker> <buildCommand> <outputFileName>')
     .alias('adc')

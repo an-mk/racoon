@@ -1,6 +1,6 @@
 
-const CheckEnv = require('./models/CheckEnv.js')
-const File = require('./models/File.js')
+const CheckEnv = require('../models/CheckEnv.js')
+const File = require('../models/File.js')
 
 const insertCheckEnv = async (name, execEnv, usesBinary, compiler) => {
     const checkEnv = new CheckEnv({ name: name, execEnv: execEnv, usesBinary: usesBinary });

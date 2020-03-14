@@ -1,4 +1,4 @@
-const ExecEnv = require("./models/ExecEnv")
+const ExecEnv = require("../models/ExecEnv")
 
 const insertExecEnv = async (name, img, exec, memory, time) => {
 	const comp = new ExecEnv({ name: name, image_name: img, exec_command: exec, memory: memory, time: time });
