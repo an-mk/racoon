@@ -36,4 +36,10 @@ app.use('/api', require('./api/misc'))
 
 app.get('*', (_req, res) => res.sendFile(`${__dirname}/public/index.html`))
 
-app.listen(port, () => console.log(`Running on port ${port}`))
+
+module.exports = new Promise(resolve => 
+    app.listen(port, () => {
+        console.log(`Running on port ${port}`)
+        resolve()
+    })
+)
