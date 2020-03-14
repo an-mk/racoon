@@ -124,10 +124,15 @@ program.command('listCheckEnvs')
 program.command('addProblem <name> <content> <checkEnv> [checkerCode]')
     .alias('aprb')
     .description('Adds a problem. Checker code is required for checkEnvs using them')
-    .action((name, content, checkEnv, checkerCode) => {
+    .action(async (name, content, checkEnv, checkerCode) => {
         content = content.replace(/\\t/g, '\t').replace(/\\n/g, '\n').replace(/\\r/g, '')
-        var stream = fs.createReadStream(checkerCode);
-        problems.insertProblem(name, content, checkEnv, stream).then(() => process.exit(0))
+        var stream = undefined;
+        if (checkerCode !== undefined)
+        stream = fs.createReadStream(checkerCode);
+        await problems.insertProblem(name, content, checkEnv, stream).then(x => {
+            console.log(x[1]);
+        }, console.log)
+        process.exit(0)
     })
 
 program.command('remProblem <name>')
@@ -144,9 +149,9 @@ program.command('insertTest <problem> <pathToFile> <pathToOutFile>')
     .action(async (problem, file, outFile)=>{
         var stream = fs.createReadStream(file);
         var outStream = fs.createReadStream(outFile);
-        await tests.insertTest(problem, stream, outStream).then(_=> {
+        await tests.insertTest(problem, stream, outStream).then(_ => {
             console.log("OK");
-        },err=>{console.log(err)} )
+        }, console.log)
         process.exit(0)
     })
 //-----------------
