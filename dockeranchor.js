@@ -12,8 +12,8 @@ const crypto = require('crypto')
 
 
 const dockerProto = process.env.RACOONDOCKERPROTO || 'http'
-const dockerHost = process.env.RACOONDOCKERHOST || '192.168.99.101'
-const dockerPort = process.env.RACOONDOCKERPORT || 2376
+const dockerHost = process.env.RACOONDOCKERHOST || '127.0.0.1'
+const dockerPort = process.env.RACOONDOCKERPORT || 2375
 
 const docker = new Docker({ protocol: dockerProto, host: dockerHost, port: dockerPort })
 
@@ -57,6 +57,7 @@ async function pingDocker()
 		return[true, info];
 	}catch(err)
 	{
+		console.error(err);
 		return [false, err];
 	}
 }

@@ -2,7 +2,6 @@ angular.module('app').service('userService', function ($http) {
     const userService = this
     this.amIAdmin = async function () {
         const res = await $http.get('/api/me/amiadmin')
-        console.log(res)
         return res.data
     }
     this.myName = async function () {

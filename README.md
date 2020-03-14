@@ -48,7 +48,6 @@ Wait for it, then you may run the app.
 You should get the gcc version printed on the screen.
 
 ### Linux
-Linux ssie xD
 
 # Configuration
 ## Environment variables

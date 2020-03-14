@@ -1,13 +1,9 @@
 angular.module('app').controller('contestController', function ($scope, $async, $routeParams, userService, miscService, notificationService) {
     window.mdc.autoInit()
+    const drawer = mdc.drawer.MDCDrawer.attachTo(document.querySelector('.mdc-drawer'))
 
     $scope.toggleDrawer = () => {
-        const drawer = document.querySelector('.mdc-drawer')
-        if (drawer.style.display == 'flex')
-            drawer.style.display = 'none'
-
-        drawer.style.display = 'flex'
-
+        drawer.open = !drawer.open
     }
     $scope.refresh = $async(function* () {
         if (!$scope.problems)

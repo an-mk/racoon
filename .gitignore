@@ -1,6 +1,6 @@
 /node_modules
 *.batman
 *.shaman
-style.css
+style.css.map
 /tests
 /tmp
