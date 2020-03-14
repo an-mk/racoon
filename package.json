@@ -5,31 +5,29 @@
     "main": "index.js",
     "scripts": {
         "start": "node index.js",
-        "compile": "./node_modules/.bin/node-sass  ./public/style.scss -o ./public/ --include-path ./node_modules/",
-        "prepare": "./node_modules/.bin/node-sass  ./public/style.scss -o ./public/ --include-path ./node_modules/",
+        "compile": "./node_modules/.bin/sass ./public/style.scss ./public/style.css --load-path=./node_modules/",
         "test": "./node_modules/.bin/protractor"
     },
     "author": "",
     "license": "",
     "dependencies": {
-        "bcrypt": "^3.0.6",
-        "commander": "^3.0.1",
-        "crypto-random-string": "^3.0.1",
+        "bcrypt": "^4.0.1",
+        "commander": "^5.0.0",
+        "crypto-random-string": "^3.2.0",
         "express": "^4.17.1",
-        "express-fileupload": "^1.1.6-alpha.5",
-        "express-session": "^1.16.2",
-        "express-validator": "^6.2.0",
-        "helmet": "^3.21.1",
-        "material-components-web": "^3.1.1",
-        "mongodb": "^3.3.2",
-        "mongoose": "^5.7.1",
-        "mongoose-gridfs": "^1.2.7",
+        "express-fileupload": "^1.1.6",
+        "express-session": "^1.17.0",
+        "express-validator": "^6.4.0",
+        "helmet": "^3.21.3",
+        "material-components-web": "^5.1.0",
+        "mongodb": "^3.5.5",
+        "mongoose": "^5.9.4",
+        "mongoose-gridfs": "^1.2.32",
         "node-docker-api": "^1.1.22",
-        "node-sass": "^4.12.0",
         "path": "^0.12.7",
-        "rimraf": "^3.0.0",
-        "tar": "^4.4.10",
-        "util": "^0.12.1"
+        "rimraf": "^3.0.2",
+        "tar": "^6.0.1",
+        "util": "^0.12.2"
     },
     "bin": {
         "racoon": "./cli.js",
@@ -37,7 +35,8 @@
     },
     "devDependencies": {
         "chai": "^4.2.0",
-        "mocha": "^6.2.0",
-        "protractor": "^5.4.2"
+        "mocha": "^7.1.0",
+        "protractor": "^5.4.3",
+        "sass": "^1.26.3"
     }
 }

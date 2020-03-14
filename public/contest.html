@@ -1,13 +1,19 @@
-<aside class="mdc-drawer mdc-drawer--modal" data-mdc-auto-init="MDCDrawer">
+<aside class="mdc-drawer mdc-drawer--modal">
     <div class="mdc-drawer__content" ng-click="toggleDrawer()">
         <nav class="mdc-list">
-            <a class="mdc-list-item" ng-repeat="problem in problems track by $index" ng-href="{{problem.name}}">
+            <a class="mdc-list-item mdc-list-item--activated" ng-repeat="problem in problems track by $index" ng-href="{{problem.name}}" ng-if="$first==true" aria-current="page" tabindex="0">
+                <i class="mdc-list-item__graphic" aria-hidden="true">{{problem.name[0]}}</i>
+                <span class="mdc-list-item__text">{{problem.name}}</span>
+            </a>
+            <a class="mdc-list-item" ng-repeat="problem in problems track by $index" ng-href="{{problem.name}}" ng-if="$first==false">
                 <i class="mdc-list-item__graphic" aria-hidden="true">{{problem.name[0]}}</i>
                 <span class="mdc-list-item__text">{{problem.name}}</span>
             </a>
         </nav>
     </div>
 </aside>
+
+<div class="mdc-drawer-scrim"></div>
 
 <button class="mdc-fab mdc-fab--extended fab" data-mdc-auto-init="MDCRipple" ng-click="toggleDrawer()">
     <span class="material-icons mdc-fab__icon">menu</span>
@@ -31,8 +37,8 @@
                     <span class="mdc-tab__ripple"></span>
                 </button>
 
-                <button class="mdc-tab" role="tab" aria-selected="false" tabindex="1"
-                    ng-click="currentTab=1; refresh()" ng-show="currentUser">
+                <button class="mdc-tab" role="tab" aria-selected="false" tabindex="1" ng-click="currentTab=1; refresh()"
+                    ng-show="currentUser">
                     <span class="mdc-tab__content">
                         <span class="mdc-tab__icon material-icons" aria-hidden="true">history</span>
                         <span class="mdc-tab__text-label">Zgłoszenia</span>
@@ -71,16 +77,18 @@
                 </div>
             </div>-->
             <div class="mdc-form-field" data-mdc-auto-init="MDCFormField">
-                    <div class="mdc-radio" data-mdc-auto-init="MDCRadio" ng-repeat-start="language in languages track by $index">
-                        <input class="mdc-radio__native-control" type="radio" id="radio-{{$index}}" name="radios"
-                            ng-click="updateMonaco(language)" ng-checked="$first" ng-model="currentLanguage.name" ng-value="language.name">
-                        <div class="mdc-radio__background">
-                            <div class="mdc-radio__outer-circle"></div>
-                            <div class="mdc-radio__inner-circle"></div>
-                        </div>
-
+                <div class="mdc-radio" data-mdc-auto-init="MDCRadio"
+                    ng-repeat-start="language in languages track by $index">
+                    <input class="mdc-radio__native-control" type="radio" id="radio-{{$index}}" name="radios"
+                        ng-click="updateMonaco(language)" ng-checked="$first" ng-model="currentLanguage.name"
+                        ng-value="language.name">
+                    <div class="mdc-radio__background">
+                        <div class="mdc-radio__outer-circle"></div>
+                        <div class="mdc-radio__inner-circle"></div>
                     </div>
-                    <label for="radio-{{$index}}" ng-repeat-end>{{language.name}}</label>
+
+                </div>
+                <label for="radio-{{$index}}" ng-repeat-end>{{language.name}}</label>
             </div>
             <div id="container" style="height: 256px; margin: 0;"></div>
             <span class="end">
@@ -90,6 +98,7 @@
                 </label>
 
                 <button ng-click="submit()" class="mdc-button mdc-button--raised" data-mdc-auto-init="MDCRipple">
+                    <span class="mdc-button__ripple"></span>
                     <span class="mdc-button__label">Zgłoś</span>
                 </button>
             </span>

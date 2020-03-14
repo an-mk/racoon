@@ -6,7 +6,19 @@ $mdc-shape-small-component-radius: 32px;
 $mdc-shape-medium-component-radius: 16px;
 $mdc-shape-large-component-radius: 16px;
 
-@import "material-components-web/material-components-web";
+@use "@material/theme" with (
+  $primary: $mdc-theme-primary,
+  $secondary: $mdc-theme-secondary,
+  $background: $mdc-theme-background,
+);
+
+@use "@material/shape" with (
+  $small-component-radius: $mdc-shape-small-component-radius,
+  $medium-component-radius: $mdc-shape-medium-component-radius,
+  $large-component-radius: $mdc-shape-large-component-radius,
+);
+
+@use "material-components-web/material-components-web";
 @import url("https://fonts.googleapis.com/css?family=Roboto+Slab&display=swap");
 
 /*@keyframes show {
