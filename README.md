@@ -11,15 +11,16 @@ Judge system in development
 
 ### Windows
 1. Download an install NodeJS and Npm: [https://nodejs.org/en/download/](https://nodejs.org/en/download/)
-2. Clone racoon from git and install with npm
+2. Open shell and paste following commands:
 
-```
-git clone https://github.com/an-mk/racoon
-cd racoon
-npm install -g ./
-```
+   ```
+   npm config set @an-mk:registry https://npm.pkg.github.com/
+   npm config set //npm.pkg.github.com/:_authToken    4ffb681433494666f0348ea42b7c3eacbbe876c2
+   npm install @an-mk/racoon --global --production
+   ```
+   _First command sets `https://npm.pkg.github.com/` as a registry for `an-mk` organization, second sets read-only authorization token for this registry. Third command installs `racoon` as global package._
 
-Now you can use `racoon` (cli tool) and start server with `racoon-server` in your shell.
+   Now you can use `racoon` (cli tool) and start server with `racoon-server` in your shell.
 
 3. Download and install [Docker Toolbox](https://github.com/docker/toolbox/releases "Docker Toolbox")
 4. Temporary solution to mitigate TLS connection errors:
@@ -56,7 +57,7 @@ Name | Default | Use
 RACOONPORT | `3000` | Port on which the app will run.
 RACOONDOCKERPROTO | `http` | Protocol for Docker connection.
 RACOONDOCKERHOST | `127.0.0.1` | Docker Machine Address
-RACOONDOCKERPORT | `2375` | Docker Machine exposed API port
+RACOONDOCKERPORT | `2376` | Docker Machine exposed API port
 RACOONMONGOPSW | - | Password for MongoDB database
 RACOONMONGOHOST | - | MongoDB hostname.
 RACOONMONGOUNAME | - | MongoDB username.

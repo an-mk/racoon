@@ -15,7 +15,11 @@ class FunctionQueue {
         if (this._running < this._maxParallel) {
             this._running++
             while (this._running <= this._maxParallel && this._queue.length)
-                await this._fun(...(this._queue.shift()))
+                try {
+                    await this._fun(...(this._queue.shift()))
+                } catch (err) {
+                    console.log(err)
+                }
             this._running--
         }
     }

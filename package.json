@@ -1,16 +1,25 @@
 {
-    "name": "racoon",
-    "version": "0.0.1",
+    "name": "@an-mk/racoon",
+    "version": "0.0.4",
     "description": "Fajna sprawdzarka",
-    "main": "index.js",
+    "main": "indexLauncher.js",
     "scripts": {
-        "start": "node index.js",
-        "test": "./node_modules/.bin/protractor",
-        "install": "./node_modules/.bin/sass ./public/style.scss ./public/style.css --load-path=./node_modules/",
-        "postinstall": "if-env NODE_ENV=production && echo production || webdriver-manager update"
+        "start": "node indexLauncher.js",
+        "test": "if-env NODE_ENV=production && echo production || protractor",
+        "postinstall": "if-env NODE_ENV=production && echo production || npm-run-all compile-css update-webdriver",
+        "prepack": "npm run compile-css",
+        "compile-css": "sass ./public/style.scss ./public/style.css --load-path=./node_modules/",
+        "update-webdriver": "webdriver-manager update"
     },
     "author": "",
     "license": "",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/an-mk/racoon"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com/"
+    },
     "dependencies": {
         "bcrypt": "^4.0.1",
         "commander": "^5.0.0",
@@ -25,14 +34,15 @@
         "mongoose": "^5.9.4",
         "mongoose-gridfs": "^1.2.32",
         "node-docker-api": "^1.1.22",
+        "npm-run-all": "^4.1.5",
         "path": "^0.12.7",
         "rimraf": "^3.0.2",
         "tar": "^6.0.1",
         "util": "^0.12.2"
     },
     "bin": {
-        "racoon": "./cli.js",
-        "racoon-server": "./index.js"
+        "racoon": "./cliLogic/cli.js",
+        "racoon-server": "./indexLauncher.js"
     },
     "devDependencies": {
         "chai": "^4.2.0",

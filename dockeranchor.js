@@ -13,7 +13,7 @@ const crypto = require('crypto')
 
 const dockerProto = process.env.RACOONDOCKERPROTO || 'http'
 const dockerHost = process.env.RACOONDOCKERHOST || '127.0.0.1'
-const dockerPort = process.env.RACOONDOCKERPORT || 2375
+const dockerPort = process.env.RACOONDOCKERPORT || 2376
 
 const docker = new Docker({ protocol: dockerProto, host: dockerHost, port: dockerPort })
 

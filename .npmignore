@@ -4,3 +4,5 @@ style.css.map
 prepare_console.bat
 /tests
 /tmp
+.*
+appveyor.yml
