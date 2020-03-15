@@ -1,8 +1,16 @@
 const { insertProblem } = require('./problems')
 const { insertLang } = require('./cliLogic/langs')
 
+const puppeteer = require('puppeteer')
+
 exports.config = {
     framework: 'mocha',
+    capabilities: {
+        browserName: 'chrome',
+        chromeOptions: {
+            binary: puppeteer.executablePath()
+        }
+    },
     specs: [
         'test/e2e/*.spec.js'
     ],

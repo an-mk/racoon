@@ -1,7 +1,6 @@
 /node_modules
 *.batman
-*.shaman
-style.css
 style.css.map
+prepare_console.bat
 /tests
 /tmp

@@ -1,12 +1,13 @@
 {
-    "name": "sprawdzarka",
+    "name": "racoon",
     "version": "0.0.1",
     "description": "Fajna sprawdzarka",
     "main": "index.js",
     "scripts": {
         "start": "node index.js",
-        "compile": "./node_modules/.bin/sass ./public/style.scss ./public/style.css --load-path=./node_modules/",
-        "test": "./node_modules/.bin/protractor"
+        "test": "./node_modules/.bin/protractor",
+        "install": "./node_modules/.bin/sass ./public/style.scss ./public/style.css --load-path=./node_modules/",
+        "postinstall": "if-env NODE_ENV=production && echo production || webdriver-manager update"
     },
     "author": "",
     "license": "",
@@ -19,7 +20,7 @@
         "express-session": "^1.17.0",
         "express-validator": "^6.4.0",
         "helmet": "^3.21.3",
-        "material-components-web": "^5.1.0",
+        "if-env": "^1.0.4",
         "mongodb": "^3.5.5",
         "mongoose": "^5.9.4",
         "mongoose-gridfs": "^1.2.32",
@@ -35,8 +36,10 @@
     },
     "devDependencies": {
         "chai": "^4.2.0",
+        "material-components-web": "^5.1.0",
         "mocha": "^7.1.0",
         "protractor": "^5.4.3",
+        "puppeteer": "^2.1.1",
         "sass": "^1.26.3"
     }
 }
