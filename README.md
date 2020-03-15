@@ -47,11 +47,11 @@ Open Docker Terminal
 In Docker Terminal type `docker-machine ssh`, then `docker pull gcc`
 Wait for it, then you may run the app.
 You should get the gcc version printed on the screen.
-
 ### Linux
 
-# Configuration
-## Environment variables
+## Configuration
+
+### Environment variables
 Name | Default | Use
 --- | --- | ---
 RACOONPORT | `3000` | Port on which the app will run.
@@ -65,20 +65,29 @@ RACOONMONGOURL | It sets default database name to `sprawdzarka` | Override other
 RACOONMONGODEBUG | - | More verbose Mongoose logs.
 RACOONTMPFILES | `./tmp` | Path to Racoon temp dir.
 
-## Adding languages
+### Adding languages
 
 ```
-racoon addLang C++ cpp '#include <iostream>\nusing namespace std;\nint main() {\n\tcout<<\"Hello, World!\";\n\treturn 0;\n}' 'gcc' 'gcc'
-
-racoon addLang C c '#include <stdio.h>\nint main(void) {\n    printf(\"Hello, World!\");\n    return 0;\n}' 'gcc' 'gcc'
-
-racoon addLang Java java 'import java.util.*;\nimport java.lang.*;\nimport java.io.*;\nclass Main\n{\n    public static void main (String[] args) throws java.lang.Exception\n    {\n        System.out.println(\"Hello, World!\");\n    }\n}' 'gcc' 'gcc'
-
-racoon addLang Python python 'print(\"Hello, World!\") ' 'gcc' 'gcc'
+racoon addCompiler gcc gcc 'bash -c mv_${this.file}_a.cpp_;_g++_-O2_-std=c++17_-o_a.out_a.cpp' a.out
+racoon addExecEnv gcc gcc 'bash -c chmod_+x_${this.file}_;_./${this.file}_<_${this.input}' 16000000 16000000
+racoon addLang C++ cpp '#include <iostream>\nusing namespace std;\nint main() {\n\tcout << "Hello, World!";\n\treturn 0;\n}' 'gcc' 'gcc'
 ```
 
-## Adding problems
+### Adding checker commands
+```
+racoon addExecEnv diff gcc 'bash -c echo>>${this.output};echo>>${this.good};if_diff_-ZB_${this.output}_${this.good};_then_echo_OK;fi' 16000000 16000000
+racoon addCheckEnv diff diff false
+
+racoon addExecEnv gcc-check gcc 'bash -c chmod_+x_${this.file};./${this.file}_${this.input}_${this.output}_${this.good}' 256000000 16000000
+racoon addCheckEnv C++ gcc-check true gcc
+```
+
+### Adding problems and tests (this will be possible in admin panel)
 
 ```
-racoon addProblem Suma '<p>Zsumuj a i b. </p> <b>Przykładowe wejście:</b> <code>a = 2 \nb = 10 </code> <b>Przykładowe wyjście:</b> <code>12</code>'
+racoon addProblem Suma '<p>Zsumuj a i b. </p> <b>Przykładowe wejście:</b> <code>2 2</code> <b>Przykładowe wyjście:</b> <code>4</code>' diff
+racoon insertTest Suma <input-file> <output-file>
+
+racoon addProblem Greater 'Print a number greater than in input' C++ <checker-source-file>
+# in this example checker-source-file should be a checker program that when executed with command 'checker <input> <user-output> <model-output>' prints 'OK' if output is correct
 ```

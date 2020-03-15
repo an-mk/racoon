@@ -96,7 +96,6 @@ async function judge(solution) {
                         await File.toFile(testFile, `${dirPath}/${testFile}`);
                         await File.toFile(testObj.outFile, `${dirPath}/outFile.txt`)
 
-
                         var result = await dockeranchor.execEx(lang.execenv, compiledFile, `${dirPath}/${testFile}`, {},
                             { memLimit: problem.memLimit, timeLimit: problem.timeLimit })
 
@@ -119,8 +118,6 @@ async function judge(solution) {
 
                         if (result.substr(0, 2) !== 'OK')
                             throw [0, 'Wrong anwser']
-
-
                     };
 
                     await solution.updateOne({ result: 'OK' })

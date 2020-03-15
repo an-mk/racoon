@@ -15,7 +15,7 @@ const asyncWriteFile = promisify(fs.writeFile)
 
 async function insertProblem (name, content, checkEnv, checkCodeStream) {
     const problem = new Problem({ name: name, content: content, checkEnv: checkEnv });
-    const isFound = await Problem.findOne({ name: checkEnv });
+    const isFound = await Problem.findOne({ name: name });
 
     const envInstance = await CheckEnv.findOne({ name: checkEnv })
     if (!envInstance) {
