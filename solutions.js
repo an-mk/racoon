@@ -103,7 +103,7 @@ async function judge(solution) {
                         await readFileAsync(`${dirPath}/outFile.txt`, 'utf8').then(console.log)
 
                         try {
-                            var result = await dockeranchor.execEx(checkEnvInstance.execEnv, checkPath, result[0], { good: `${dirPath}/outFile.txt` }, { timeLimit: problem.timeLimit })
+                            var result = await dockeranchor.execEx(checkEnvInstance.execEnv, checkPath, `${dirPath}/${testFile}`, { output: result[0], good: `${dirPath}/outFile.txt` }, { timeLimit: problem.timeLimit })
                         } catch (err) {
                             if (err[0] === 0) {
                                 throw [1, 'Checker error! ' + err[1]]
