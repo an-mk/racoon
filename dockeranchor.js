@@ -1,4 +1,4 @@
-﻿"use strict";
+﻿'use strict';
 const Docker = require('node-docker-api').Docker
 const fs = require('fs');
 const compiler = require('./models/Compiler')
@@ -87,7 +87,7 @@ function gccDetect() {
 		.then((stream) => promisifyStream(stream))
 		.then(() => _container.kill())
 		.then(() => _container.delete({ force: true }))
-		.then(() => console.log("Testowy kontener skasowany."))
+		.then(() => console.log('Test container deleted'))
 		.catch((error) => console.log(error))
 
 }
@@ -100,11 +100,11 @@ function gccDetect() {
  */
 async function compile(comp, file, _outfile) {
 	return new Promise(async (resolve, reject) => {
-		var logs = '';
+		var logs = ''
+		let container
 		try {
 
 			const fileBasename = path.basename(file)
-			const filePureBasename = path.basename(file, path.extname(file))
 			const fileDirname = path.dirname(file)
 			const outfile = _outfile || file.replace(fileExtension, '.tar')
 			const tarfile = `${fileDirname}/${crypto.randomBytes(10).toString('hex')}.tar`;
@@ -112,18 +112,18 @@ async function compile(comp, file, _outfile) {
 			console.log(`Let's compile! ${fileBasename}`);
 
 			if((await pingDocker())[0] == false){
-				reject([1, "Cannot reach docker machine."]);
+				reject([1, 'Cannot reach docker machine']);
 				return;
 			}
 
 			const compilerInstance = await compiler.findOne({ name: comp });
 
 			if (!compilerInstance){
-				reject ([1,'Invalid compiler name']);
+				reject ([1, 'Invalid compiler name']);
 				return;
 			}
 
-			if (compilerInstance.shadow === true){
+			if (compilerInstance.shadow === true) {
 				resolve(file);
 				return;
 			}
@@ -133,7 +133,7 @@ async function compile(comp, file, _outfile) {
 				cwd: fileDirname
 			}, [fileBasename])
 
-			var container = await docker.container.create({
+			container = await docker.container.create({
 				Image: compilerInstance.image_name,
 				// compilerInstance.exec_command can be template string, it splits with ' '
 				// '_' is a non-splitting space
@@ -155,7 +155,7 @@ async function compile(comp, file, _outfile) {
 				.then(stream => promisifyStream(stream))
 			await unlinkAsync(tarfile)
 			await container.start()
-			var _unpromStream = await container.logs({
+			let _unpromStream = await container.logs({
 				follow: true,
 				stdout: true,
 				stderr: true
@@ -179,11 +179,11 @@ async function compile(comp, file, _outfile) {
 					return promisifyStreamNoSpam(stream)
 				})
 			
-			var compiledFile;
+			let compiledFile;
             await tar.list({file : outTarPath, onentry: entry => {compiledFile = entry.path}});
 			await tar.extract({ file: outTarPath, C: fileDirname });
 			
-			await renameAsync(fileDirname + '/' + compiledFile, outfile)
+			await renameAsync(`${fileDirname}/${compiledFile}`, outfile)
 			await unlinkAsync(outTarPath)
 
 			await container.delete({ force: true })
@@ -207,32 +207,32 @@ async function compile(comp, file, _outfile) {
 async function exec(exname, infile, stdinfile) {
 	return new Promise(async (resolve, reject) => {
 		const _execInstance = await execenv.findOne({ name: exname });
-
 		if (!_execInstance) {
-			reject([1,"Invalid ExecEnv"]);
+			reject([1, 'Invalid ExecEnv']);
 			return;
 		}
+
+		let _container
 
 		try {
 			
 			const fileBasename = path.basename(infile);
-			const filePureBasename = path.basename(infile, path.extname(infile));
 			const fileDirname = path.dirname(infile);
 			const tarfile = `${fileDirname}/${crypto.randomBytes(10).toString('hex')}.tar`;
 
 			const infilename = fileBasename;//infile.replace(pathToFile, '')
 
-			var stdininfilename = '';
+			let stdininfilename = '';
 			if(stdinfile)stdininfilename = path.basename(stdinfile);
 
 			console.log(`Let's execute! ${fileBasename}`);
 
 			if((await pingDocker())[0] == false){
-				reject([1, "Cannot reach docker machine."]);
+				reject([1, 'Cannot reach docker machine']);
 				return;
 			}
 
-			var _container = await docker.container.create({
+			_container = await docker.container.create({
 				Image: _execInstance.image_name,
 				// _execInstance.exec_command can be template string, it splits with '_'
 				// Example of exec_command:
@@ -285,7 +285,7 @@ async function exec(exname, infile, stdinfile) {
 			if (inspection.data.State.Status !== 'exited') {
 				await _container.kill();
 				await _container.delete({ force: true });
-				reject([0,"Time Limit Exceeded"]);
+				reject([0, 'Time Limit Exceeded']);
 				return;
 			}
 			//else await _container.stop();
@@ -324,9 +324,9 @@ async function exec(exname, infile, stdinfile) {
 
 		} catch (err) {
 			if (typeof _container !== 'undefined') {
-				_container.delete({ force: true }).catch((e) => console.log("Failed to clean up after exec error, it is still alive! " + e));
+				_container.delete({ force: true }).catch((e) => console.error(`Failed to clean up after exec error, it is still alive! ${e}`));
 			}
-			reject([1,"Failed at execution attempt: " + err]);
+			reject([1, `Failed at execution attempt: ${err}`]);
 			return;
 		}
 
@@ -348,20 +348,21 @@ async function execEx(exname, infile, stdinfile, morefiles, optz) {
 		const opts = optz || {};
 
 		if (!_execInstance) {
-			reject([1,"Invalid ExecEnv"]);
+			reject([1, 'Invalid ExecEnv']);
 			return;
 		}
+
+		let _container
 
 		try {
 			
 			const fileBasename = path.basename(infile);
-			const filePureBasename = path.basename(infile, path.extname(infile));
 			const fileDirname = path.dirname(infile);
 			const tarfile = `${fileDirname}/${crypto.randomBytes(10).toString('hex')}.tar`;
 
 			const infilename = fileBasename;
 
-			var stdininfilename = '';
+			let stdininfilename = '';
 			if(stdinfile)stdininfilename = path.basename(stdinfile);
 
 			const timeLimit = Math.min(_execInstance.time, isNaN(opts.timeLimit) ? Infinity : opts.timeLimit);
@@ -374,7 +375,7 @@ async function execEx(exname, infile, stdinfile, morefiles, optz) {
 
 			console.log(`Let's execute! ${fileBasename}`);
 
-			var _container = await docker.container.create({
+			_container = await docker.container.create({
 				Image: _execInstance.image_name,
 				// _execInstance.exec_command can be template string, it splits with '_'
 				// Example of exec_command:
@@ -414,7 +415,7 @@ async function execEx(exname, infile, stdinfile, morefiles, optz) {
 				}
 			}
 
-			var _unpromStream = await _container.fs.put(tarfile, { path: '.' })
+			let _unpromStream = await _container.fs.put(tarfile, { path: '.' })
 			await promisifyStreamNoSpam(_unpromStream);
 			
 			await unlinkAsync(tarfile);
@@ -427,28 +428,28 @@ async function execEx(exname, infile, stdinfile, morefiles, optz) {
 			const inspection = await _container.status();
 			const execTime = new Date(inspection.data.State.FinishedAt) - new Date(inspection.data.State.StartedAt);
 
-			console.log(`Calculated uptime of ${execTime} `);
+			console.log(`Calculated uptime of ${execTime}`);
 
 			if (execTime >= timeLimit) {
 
 				await _container.delete({ force: true });
-				reject([0,"Time Limit Exceeded"]);
+				reject([0,'Time Limit Exceeded']);
 				return;
 			}
 
 			console.log(`Container in state: ${inspection.data.State.Status} and health: ${inspection.data.State.Error}`);
 
-			if (inspection.data.State.Error !== "") {
+			if (inspection.data.State.Error !== '') {
 
 				await _container.delete({ force: true });
-				reject([0,"Runtime Error", inspection.data.State.Error]);
+				reject([0,'Runtime Error', inspection.data.State.Error]);
 				return;
 			}
 
 			if (inspection.data.State.ExitCode !== 0) {
 
 				await _container.delete({ force: true });
-				reject([0,"Runtime Error", inspection.data.State.ExitCode]);
+				reject([0,'Runtime Error', inspection.data.State.ExitCode]);
 				return;
 			}
 
@@ -495,9 +496,9 @@ async function execEx(exname, infile, stdinfile, morefiles, optz) {
 
 		} catch (err) {
 			if (typeof _container !== 'undefined') {
-				_container.delete({ force: true }).catch((e) => console.log("Failed to clean up after exec error, it is still alive! " + e));
+				_container.delete({ force: true }).catch((e) => console.error(`Failed to clean up after exec error, it is still alive! ${e}`));
 			}
-			reject([1,"Failed at execution attempt: " + err]);
+			reject([1, `Failed at execution attempt: ${err}`]);
 			return;
 		}
 
@@ -508,14 +509,14 @@ async function execEx(exname, infile, stdinfile, morefiles, optz) {
 async function nukeContainers(quit) {
 	const shouldQuit = quit !== false;
 
-	var conts = await docker.container.list({ all: true });
-	console.log("NUKING DOCKER!, containers=", conts.length);
-	var promises = conts.map(cont => {
+	const conts = await docker.container.list({ all: true });
+	console.log(`NUKING DOCKER!, containers=${conts.length}`);
+	const promises = conts.map(cont => {
 		const cname = cont.data.Names[0]
 		return cont.start()
 			//.then(() => cont.kill())
 			.then(() => cont.delete({ force: true }))
-			.catch((err) => console.log("There is always a catch. Nuking docker failed. Try: docker kill $(docker ps -aq) && docker rm $(docker ps -aq) , on the docker machine instead. " + err))
+			.catch(err => console.error(`There is always a catch. Nuking docker failed. Try: docker kill $(docker ps -aq) && docker rm $(docker ps -aq) , on the docker machine instead. ${err}`))
 			.then(() => console.log(`Nuking ${cname} done`));
 	})
 

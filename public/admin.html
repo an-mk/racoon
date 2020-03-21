@@ -10,16 +10,15 @@
             <div class="mdc-typography--headline5" style="text-align: center;">Dodaj zadanie</div>
 
             <div class="mdc-text-field mdc-text-field--outlined" data-mdc-auto-init="MDCTextField">
-                <input type="text" id="nameA" class="mdc-text-field__input" ng-model="nameA">
+                <input type="text" id="problemName" class="mdc-text-field__input" ng-model="problemName">
                 <div class="mdc-notched-outline">
                     <div class="mdc-notched-outline__leading"></div>
                     <div class="mdc-notched-outline__notch">
-                        <label for="nameA" class="mdc-floating-label">Nazwa zadania</label>
+                        <label for="problemName" class="mdc-floating-label">Nazwa zadania</label>
                     </div>
                     <div class="mdc-notched-outline__trailing"></div>
                 </div>
             </div>
-
 
             <div class="mdc-text-field mdc-text-field--textarea mdc-text-field--fullwidth"
                 data-mdc-auto-init="MDCTextField">
@@ -33,6 +32,44 @@
                     </div>
                     <div class="mdc-notched-outline__trailing"></div>
                 </div>
+            </div>
+
+            <div class="mdc-typography--body1">Środowisko wykonania:</div>
+
+            <div class="mdc-form-field" data-mdc-auto-init="MDCFormField">
+                <div class="mdc-radio" data-mdc-auto-init="MDCRadio"
+                    ng-repeat-start="checkEnv in checkEnvs track by $index">
+                    <input class="mdc-radio__native-control" type="radio" id="radio-{{$index}}" name="radios"
+                        ng-checked="$first" ng-model="currentCheckEnv.name" ng-click="cl(currentCheckEnv.name)" ng-value="checkEnv.name">
+                    <div class="mdc-radio__background">
+                        <div class="mdc-radio__outer-circle"></div>
+                        <div class="mdc-radio__inner-circle"></div>
+                    </div>
+                </div>
+                <label for="radio-{{$index}}" ng-repeat-end>{{checkEnv.name}}</label>
+            </div>
+
+            <div class="mdc-text-field mdc-text-field--textarea mdc-text-field--fullwidth"
+                data-mdc-auto-init="MDCTextField">
+                <textarea class="mdc-text-field__input" rows="1" cols="1"
+                    oninput="this.style.height='';this.style.height = this.scrollHeight + 'px'" onchange="this.focus();"
+                    ng-model="checkerCode"></textarea>
+                <div class="mdc-notched-outline">
+                    <div class="mdc-notched-outline__leading"></div>
+                    <div class="mdc-notched-outline__notch">
+                        <label for="textarea" class="mdc-floating-label">Kod źródłowy sprawdzarki (opcjonalne)</label>
+                    </div>
+                    <div class="mdc-notched-outline__trailing"></div>
+                </div>
+            </div>
+            <div class="mdc-text-field-helper-line">
+                <div class="mdc-text-field-helper-text">Sprawdzarka jest programem, który przyjmuje na standardowe
+                    wejście
+                    <pre class="inline-pre">input zadania</pre>,
+                    <pre class="inline-pre">output użytkownika</pre> oraz
+                    <pre class="inline-pre">wzorcowy output</pre> i wypisuje
+                    <pre class="inline-pre">OK</pre>, jeśli zadanie zostało
+                    rozwiązane poprawnie</div>
             </div>
 
             <span class="end">
@@ -96,15 +133,18 @@
             ng-repeat="solution in solutions | filter:comparator track by $index">
             <span class="mdc-typography--caption">
                 {{toLocaleString(solution.time)}}<br>
-                <span ng-style="
+                <div>
+                    <span ng-style="
                 solution.result == 'OK' ? {color:'rgb(76,175,80)'} :
                     (solution.result == 'WAITING' ? {color: 'rgb(255,152,0)'} : {color:'rgb(244,67,54)'})
                 " ng-bind="
                 solution.result == 'OK' ? 'Zaakceptowano' :
                     (solution.result == 'WAITING' ? 'Oczekiwanie' : solution.result)
                 ">{{solution.result}}</span><br>
-                {{solution.problem}}<br>
-                {{solution.user}}
+                    <span>Problem: {{solution.problem}}</span><br>
+                    <span>Autor: {{solution.problem}}</span><br>
+                    <span>Język: {{solution.lang}}</span>
+                </div>
             </span>
             <code>{{solution.code}}</code>
         </div>

@@ -28,7 +28,7 @@ app.use(express.json())
 
 app.use('/api/users', require('./api/users'))
 app.use('/api/problems', require('./api/problems'))
-app.use('/api/ranking', require('./api/misc'))
+app.use('/api/ranking', require('./api/ranking'))
 app.use('/api/solutions', require('./api/solutions'))
 app.use('/api/me', require('./api/me'))
 app.use('/api/session', require('./api/session'))

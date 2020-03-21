@@ -8,8 +8,8 @@ angular.module('app', ['ngRoute', 'ngSanitize', 'googlechart'])
         $routeProvider.when('/contest', {
             controller: function ($location, $async, userService) {
                 $async(function* () {
-                    const problems = yield userService.problemsList()
-                    $location.path(`/contest/${problems[0].name}`)
+                    const problem = yield userService.problemsFirst()
+                    $location.path(`/contest/${problem.name}`)
                 })()
             }, template: ''
         })

@@ -4,9 +4,24 @@ angular.module('app').service('adminService', function ($http) {
         return res.data
     }
 
-    this.addProblem = async function (name, content) {
-        const res = await $http.post('/api/problems/add', { name: name, content: content })
+    this.getCheckEnvs = async function () {
+        const res = await $http.get('/api/checkenvs')
         return res.data
+    }
+
+    this.addProblem = async function (name, content, checkEnv, checkerCode) {
+        try {
+            const res = await $http.post('/api/problems/add', {
+                name: name,
+                content: content,
+                checkEnv: checkEnv,
+                checkerCode: checkerCode
+            })
+            return res.status
+        } catch (err) {
+            console.error(err)
+            return err.status
+        }
     }
 
     this.addTest = async function (name, file) {

@@ -10,7 +10,7 @@ Judge system in development
 ## Installation
 
 ### Windows
-1. Download an install NodeJS and Npm: [https://nodejs.org/en/download/](https://nodejs.org/en/download/)
+1. Download and install NodeJS and Npm: [https://nodejs.org/en/download/](https://nodejs.org/en/download/)
 2. Open shell and paste following commands:
 
    ```

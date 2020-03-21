@@ -162,3 +162,18 @@ div[ng-view] {
     left: calc(50% - 85px);
   }
 }
+
+.flex-container-space-between {
+  display: flex;
+  justify-content: space-between;
+}
+
+.inline-pre {
+  display: inline;
+  margin: 0;
+}
+
+.mdc-text-field--textarea .mdc-text-field__input{
+  margin-top: 12px;
+  padding-left: 36px;
+}

@@ -22,7 +22,12 @@ angular.module('app').service('userService', function ($http) {
         await $http.delete('/api/session')
     }
     this.problemsList = async function () {
-        const res = await $http.get('/api/problems/list')
+        if (!this.problemsListCache)
+            this.problemsListCache = (await $http.get('/api/problems/list')).data
+        return this.problemsListCache
+    }
+    this.problemsFirst = async function () {
+        const res = await $http.get('/api/problems/first')
         return res.data
     }
     this.submit = async function (problem, code, lang) {
