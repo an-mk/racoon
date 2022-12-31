@@ -47,7 +47,7 @@
     "devDependencies": {
         "chai": "^4.2.0",
         "material-components-web": "^5.1.0",
-        "mocha": "^7.1.0",
+        "mocha": "^10.2.0",
         "protractor": "^5.4.3",
         "puppeteer": "^2.1.1",
         "sass": "^1.26.3"
